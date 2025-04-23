@@ -4,7 +4,7 @@ function App() {
 
   return (
     <>
-      <h1 className='bg-yellow-300 text-black p-2 text-center'>CFG Derivation Game</h1>
+      <h1 className='bg-yellow-300 text-black p-2 text-center font-bold text-2xl'>CFG Derivation Game</h1>
     </>
   )
 }
