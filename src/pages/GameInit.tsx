@@ -1,7 +1,10 @@
 import { useState } from "react"
 import GameHeading from "../components/GameHeading";
+import { BarLoader } from "react-spinners";
+import { useNavigate } from "react-router";
 
 const GameInit = () => {
+    const navigate = useNavigate();
     const [rules, setRules] = useState([
         {
             lhs: "S",
@@ -11,6 +14,7 @@ const GameInit = () => {
     const [ruleCnt, setRuleCnt] = useState(1);
     const [targetString, setTargetString] = useState("");
     const [maxTreeDepth, setMaxTreeDepth] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const handleDelete = (index: number) => {
         if (index === 0) {
@@ -29,16 +33,112 @@ const GameInit = () => {
         console.log(rules);
     }
 
+    const handleChecks = () => {
+        setLoading(true);
+
+        // 1) Basic presence checks
+        if (targetString.trim() === "") {
+            alert("Please add a target string.");
+            setLoading(false);
+            return;
+        }
+        if (maxTreeDepth < 0) {
+            alert("Please add a valid max tree depth.");
+            setLoading(false);
+            return;
+        }
+
+        // 2) Gather LHS set, and scan RHS for terminals / non-terminals
+        const lhsSet = new Set<string>();
+        const usedNonTerms = new Set<string>();
+        const usedTerms = new Set<string>();
+
+        for (const { lhs, rhs } of rules) {
+            // LHS must be nonempty uppercase
+            if (!lhs || lhs !== lhs.toUpperCase()) {
+                alert("All LHS (non-terminals) must be uppercase and nonempty.");
+                setLoading(false);
+                return;
+            }
+
+            // RHS must be nonempty, not start/end with '|' or contain '||'
+            if (
+                !rhs ||
+                rhs.startsWith("|") ||
+                rhs.endsWith("|") ||
+                rhs.includes("||")
+            ) {
+                alert("RHS must be nonempty, not start/end with '|' or contain '||'.");
+                setLoading(false);
+                return;
+            }
+
+            lhsSet.add(lhs);
+            // classify each symbol in RHS
+            for (const ch of rhs) {
+                if (ch === "|") continue;
+                if (ch >= "A" && ch <= "Z") usedNonTerms.add(ch);
+                else if (ch >= "a" && ch <= "z") usedTerms.add(ch);
+            }
+        }
+
+        // 3) Every non-terminal you used must actually have a rule
+        for (const nt of usedNonTerms) {
+            if (!lhsSet.has(nt)) {
+                alert(`Non-terminal '${nt}' has no production rule.`);
+                setLoading(false);
+                return;
+            }
+        }
+
+        // 4) Target string: only terminals, no uppercase
+        for (const ch of targetString) {
+            if (ch >= "A" && ch <= "Z") {
+                alert("Target must not contain non-terminals (uppercase).");
+                setLoading(false);
+                return;
+            }
+            if (!usedTerms.has(ch)) {
+                alert(`Character '${ch}' not used in any rule.`);
+                setLoading(false);
+                return;
+            }
+        }
+
+        const newRules = Object.values(
+            rules.reduce((acc: Record<string, { lhs: string; rhs: string[] }>, { lhs, rhs }) => {
+                const parts = rhs
+                    .split("|")
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
+                if (!acc[lhs]) {
+                    acc[lhs] = { lhs, rhs: [] };
+                }
+
+                acc[lhs].rhs.push(...parts);
+
+                return acc;
+            }, {} as Record<string, { lhs: string; rhs: string[] }>)
+        );
+        console.log(newRules);
+
+        localStorage.setItem("rules", JSON.stringify(newRules));
+        localStorage.setItem("targetString", targetString);
+        localStorage.setItem("maxTreeDepth", maxTreeDepth.toString());
+        setLoading(false);
+        navigate("/game");
+    };
+
+
     return (
-        <div className="min-h-screen text-white flex flex-col items-center justify-center px-6 py-8">
-            <div className='w-full max-w-3xl'>
-                <GameHeading />
-            </div>
-            <div className='w-full max-w-3xl'>
+        <div className='min-h-screen flex flex-col items-center px-6 py-10'>
+            <GameHeading />
+            <div className='w-full max-w-3xl flex flex-col items-center justify-center'>
                 <h2 className='text-2xl font-semibold shadow-dCyan underline underline-offset-4 my-6 text-center'>
                     Game Setup
                 </h2>
-                <form className="space-y-4">
+                <form className="space-y-4 w-full">
                     <div>
                         <label htmlFor="rules" className="block text-lg font-medium ">CFG Production Rules</label>
                         <p className="text-xs text-white/70">Use '#' in place of Epsilon (ε)</p>
@@ -49,13 +149,14 @@ const GameInit = () => {
                                         type="text"
                                         disabled={index === 0}
                                         value={rule.lhs}
+                                        maxLength={1}
                                         onChange={(e) => {
                                             const newRules = [...rules];
                                             newRules[index].lhs = e.target.value;
                                             setRules(newRules);
                                         }}
                                         placeholder="e.g. A"
-                                        className="w-1/6 rounded border-white/20 border p-1 px-2 disabled:cursor-not-allowed"
+                                        className="w-1/8 rounded border-white/20 border p-1 px-2 disabled:cursor-not-allowed"
                                     />
                                     <span className="text-lg font-bold mx-2">→</span>
                                     <input
@@ -67,7 +168,7 @@ const GameInit = () => {
                                             setRules(newRules);
                                         }}
                                         placeholder="e.g. a|b|c"
-                                        className="w-5/6 rounded-tl rounded-bl border-white/20 border p-1 px-2"
+                                        className="w-7/8 rounded-tl rounded-bl border-white/20 border p-1 px-2"
                                     />
                                     <button type="button" onClick={() => handleDelete(index)} className="border border-white/20 bg-red-500 disabled:cursor-not-allowed p-1 px-2 rounded-br rounded-tr cursor-pointer" disabled={index === 0}>Delete</button>
                                 </div>
@@ -103,7 +204,13 @@ const GameInit = () => {
                         />
                     </div>
                 </form>
-                <button type="button" className="my-6 bg-dCyan hover:bg-dCyan/80 w-full text-white text-center font-bold py-2 px-8 rounded text-xl shadow-md transition-transform duration-200">Go to Next Stage</button>
+                <button
+                    onClick={handleChecks}
+                    type="button"
+                    disabled={loading}
+                    className="disabled:cursor-not-allowed cursor-pointer mt-6 bg-dCyan hover:bg-dCyan/80 w-full text-white text-center font-bold py-2 px-8 rounded text-xl shadow-md transition-transform duration-200 flex items-center justify-center">
+                    {loading ? <BarLoader color="#ffffff" /> : "Start the Game!"}
+                </button>
             </div>
         </div>
     )

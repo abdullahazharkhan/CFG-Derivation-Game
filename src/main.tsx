@@ -7,6 +7,7 @@ import {
 import './index.css'
 import App from './App.tsx'
 import GameInit from './pages/GameInit.tsx';
+import Game from './pages/Game.tsx';
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,10 @@ const router = createBrowserRouter([
   {
     path: "/init",
     element: <GameInit />,
+  },
+  {
+    path: "/game",
+    element: <Game />
   }
 ]);
 

@@ -15,33 +15,30 @@ function App() {
   ];
 
   return (
-    <>
-      <div className='min-h-screen flex flex-col items-center justify-center px-6'>
-        <div className='w-full max-w-3xl'>
-          <GameHeading />
-          <h2 className='text-2xl font-semibold shadow-dCyan  underline underline-offset-4 my-6 text-center'>
-            Game Flow
-          </h2>
-          <ul className='space-y-1 text-lg font-medium'>
-            {rules.map((rule, index) => (
-              <li key={index} className='flex items-start gap-2'>
-                <span className='text-dCyan font-bold'>{index + 1}.</span>
-                <span>{rule}</span>
-              </li>
-            ))}
-          </ul>
-          <div className='mt-6 flex justify-center'>
-            <Link
-              to={"init"}
-              className='bg-dCyan hover:bg-dCyan/80 w-full text-white text-center font-bold py-2 px-8 rounded text-xl shadow-md transition-transform duration-200'
-            >
-              Play the Game!
-            </Link>
-          </div>
+    <div className='min-h-screen flex flex-col items-center px-6 py-10'>
+      <GameHeading />
+      <div className='w-full max-w-3xl flex flex-col items-center justify-center'>
+        <h2 className='text-2xl font-semibold shadow-dCyan underline underline-offset-4 my-6 text-center'>
+          Game Flow
+        </h2>
+        <ul className='space-y-1 text-lg font-medium'>
+          {rules.map((rule, index) => (
+            <li key={index} className='flex items-start gap-2'>
+              <span className='text-dCyan font-bold'>{index + 1}.</span>
+              <span>{rule}</span>
+            </li>
+          ))}
+        </ul>
+        <div className='mt-6 flex justify-center w-full'>
+          <Link
+            to={"init"}
+            className='bg-dCyan hover:bg-dCyan/80 w-full text-white text-center font-bold py-2 px-8 rounded text-xl shadow-md transition-transform duration-200'
+          >
+            Play the Game!
+          </Link>
         </div>
       </div>
-    </>
-
+    </div>
   );
 }
 
