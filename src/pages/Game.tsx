@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import GameHeading from "../components/GameHeading";
 import Timer from "../components/Timer";
+import Tree from 'react-d3-tree';
 
 const Game = () => {
     const navigate = useNavigate();
@@ -17,12 +18,17 @@ const Game = () => {
     const [gameWon, setGameWon] = useState(false); // New state for win condition
     const [isLoading, setIsLoading] = useState(true);
     const [maxTimeSec, setMaxTimeSec] = useState(180);
+    const [grammarData, setGrammarData] = useState<{ name: string; children: any[] }>({
+        name: "",
+        children: []
+    });
 
-    const applyRule = (ruleIdx: number) => {
+    const applyRule = (ruleIdx: number, ruleLhs: string) => {
         if (!selectedNonTerminal || selectedPosition === null) {
             alert("Please select a non-terminal and its position first.");
             return;
         }
+
 
         const nonTerminalPositions = [...currentString].reduce((acc, char, idx) => {
             if (char === selectedNonTerminal) acc.push(idx);
@@ -82,6 +88,7 @@ const Game = () => {
             setTargetString(storedTargetString);
             setMaxDepth(parseInt(storedMaxDepth));
             setMaxTimeSec(storedMaxTimeSec ? parseInt(storedMaxTimeSec) : 180);
+            setGrammarData({ name: parsedRules[0]?.lhs || "", children: [] });
             setIsLoading(false);
         } else {
             alert("Game setup is incomplete. Please start a new game.");
@@ -117,7 +124,7 @@ const Game = () => {
                     <h1 className="text-4xl font-bold text-green-500 mb-4">You Won!</h1>
                     <button
                         onClick={() => navigate("/init")}
-                        className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
+                        className="cursor-pointer bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
                     >
                         Back to Menu
                     </button>
@@ -130,7 +137,7 @@ const Game = () => {
                     <h1 className="text-4xl font-bold text-red-500 mb-4">You Lost!</h1>
                     <button
                         onClick={() => navigate("/init")}
-                        className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
+                        className="cursor-pointer bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
                     >
                         Back to Menu
                     </button>
@@ -176,7 +183,7 @@ const Game = () => {
                             <button
                                 key={idx}
                                 onClick={() => setSelectedNonTerminal(nonTerminal)}
-                                className={`p-2 rounded border ${selectedNonTerminal === nonTerminal ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                className={`cursor-pointer p-2 rounded border ${selectedNonTerminal === nonTerminal ? "bg-dCyan text-white" : "bg-white/10"}`}
                             >
                                 {nonTerminal}
                             </button>
@@ -195,7 +202,7 @@ const Game = () => {
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedPosition(idx)}
-                                    className={`p-2 rounded border ${selectedPosition === idx ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                    className={`cursor-pointer p-2 rounded border ${selectedPosition === idx ? "bg-dCyan text-white" : "bg-white/10"}`}
                                 >
                                     {pos}
                                 </button>
@@ -208,19 +215,33 @@ const Game = () => {
                     <div className="w-full">
                         <h2 className="text-xl font-bold">Select Rule</h2>
                         <div className="flex gap-2 flex-wrap">
-                            {rules.find(rule => rule.lhs === selectedNonTerminal)?.rhs.map((rhs, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => applyRule(idx)}
-                                    className="p-2 rounded border bg-white/10"
-                                >
-                                    {rhs.replace("#", "ε")}
-                                </button>
-                            ))}
+                            {rules.map((rule) => {
+                                if (rule.lhs !== selectedNonTerminal) return null;
+                                return rule.rhs.map((rhs, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => applyRule(idx)}
+                                        className="cursor-pointer p-2 rounded border bg-white/10"
+                                    >
+                                        {rhs.replace("#", "ε")}
+                                    </button>
+                                ));
+                            })}
                         </div>
                     </div>
                 )}
+
+                <div className="w-full">
+                    <h2 className="text-xl font-bold">Grammar Tree</h2>
+                    <div className="p-1 mt-1 w-full rounded border-white/20 border">
+                        <div id="treeWrapper" style={{ height: '30em' }}>
+                            <Tree data={grammarData} pathFunc={"diagonal"} orientation="vertical" />
+                        </div>
+                    </div>
+                </div>
             </div>
+
+
         </div>
     );
 };

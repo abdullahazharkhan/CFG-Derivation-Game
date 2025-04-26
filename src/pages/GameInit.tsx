@@ -326,6 +326,7 @@ const GameInit = () => {
                     </div>
                     <div>
                         <label htmlFor="maxTimeSec" className="block text-lg font-medium ">Time Limit (seconds)</label>
+                        <p className="text-xs text-white/70">Minimum allowed is 10 seconds.</p>
                         <input
                             value={maxTimeSec}
                             onChange={(e) => setMaxTimeSec(e.target.value)}
@@ -334,7 +335,6 @@ const GameInit = () => {
                             id="maxTimeSec"
                             className="mt-1 block w-full rounded border-white/20 border p-1 px-2"
                         />
-                        <p className="text-xs text-white/70">Minimum allowed is 10 seconds.</p>
                     </div>
                 </form>
                 <button
