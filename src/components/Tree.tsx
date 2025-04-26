@@ -1,24 +1,6 @@
 import { useMemo } from "react";
 import Tree from "react-d3-tree";
 
-// Preorder traversal to assign positions to non-terminals
-function assignPreorderPositions(node: any, nonTerminal: string, positions: number[], current: { value: number }) {
-    if (!node) return;
-    if (node.name === nonTerminal && !node._expanded) {
-        positions.push(current.value);
-        current.value++;
-    } else if (node.name === nonTerminal && node._expanded) {
-        // Even if expanded, count it for position assignment
-        positions.push(current.value);
-        current.value++;
-    }
-    if (node.children) {
-        for (let child of node.children) {
-            assignPreorderPositions(child, nonTerminal, positions, current);
-        }
-    }
-}
-
 // Expand the correct non-terminal at the correct *preorder* position in the tree
 function expandNodeByPreorder(node: any, nonTerminal: string, targetPos: number, rhs: string, current: { value: number }): boolean {
     if (!node.children) {
@@ -50,20 +32,23 @@ function expandNodeByPreorder(node: any, nonTerminal: string, targetPos: number,
 }
 
 function buildTreeFromHistory(history: any[]) {
-    if (!history || history.length === 0) return null;
-    let root: any;
-    if (history[0].string.length === 1) {
-        root = { name: history[0].string };
-    } else {
-        root = { name: "", children: history[0].string.split("").map((ch: string) => ({ name: ch })) };
+    // Always start with an empty space as the root node
+    let root: any = { name: " " };
+
+    if (!history || history.length === 0) {
+        return root;
     }
-    // For each derivation step, expand the tree using preorder position
-    for (let stepIdx = 1; stepIdx < history.length; stepIdx++) {
-        const { nonTerminal, pos, rhs } = history[stepIdx];
-        // Recalculate positions using preorder traversal
-        // This ensures that the correct node is expanded even as the tree changes
-        expandNodeByPreorder(root, nonTerminal, pos, rhs, { value: 0 });
+
+    // If there is at least one derivation, add children to the root
+    if (history.length > 1) {
+        root.children = history[1].string.split("").map((ch: string) => ({ name: ch }));
+        // For each derivation step after the first, expand the tree using preorder position
+        for (let stepIdx = 2; stepIdx < history.length; stepIdx++) {
+            const { nonTerminal, pos, rhs } = history[stepIdx];
+            expandNodeByPreorder(root, nonTerminal, pos, rhs, { value: 0 });
+        }
     }
+
     return root;
 }
 
