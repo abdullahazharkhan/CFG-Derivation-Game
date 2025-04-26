@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import GameHeading from "../components/GameHeading";
 import Timer from "../components/Timer";
-import Tree from 'react-d3-tree';
+import DerivationTree from "../components/Tree";
 
 const Game = () => {
     const navigate = useNavigate();
@@ -15,20 +15,18 @@ const Game = () => {
     const [maxDepth, setMaxDepth] = useState(0);
     const [rules, setRules] = useState<{ lhs: string; rhs: string[] }[]>([]);
     const [gameLost, setGameLost] = useState(false);
-    const [gameWon, setGameWon] = useState(false); // New state for win condition
+    const [gameWon, setGameWon] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [maxTimeSec, setMaxTimeSec] = useState(180);
-    const [grammarData, setGrammarData] = useState<{ name: string; children: any[] }>({
-        name: "",
-        children: []
-    });
+    const [derivationHistory, setDerivationHistory] = useState<
+        { rule: string; string: string; nonTerminal: string; pos: number; rhs: string }[]
+    >([]);
 
-    const applyRule = (ruleIdx: number, ruleLhs: string) => {
+    const applyRule = (ruleIdx: number) => {
         if (!selectedNonTerminal || selectedPosition === null) {
             alert("Please select a non-terminal and its position first.");
             return;
         }
-
 
         const nonTerminalPositions = [...currentString].reduce((acc, char, idx) => {
             if (char === selectedNonTerminal) acc.push(idx);
@@ -48,26 +46,38 @@ const Game = () => {
             return;
         }
 
+        const rhs = selectedRule.rhs[ruleIdx].replace("#", "ε");
         const newString =
             currentString.slice(0, selectedPositionIndex) +
-            selectedRule.rhs[ruleIdx].replace("#", "ε") + // Replace '#' with 'ε'
+            rhs +
             currentString.slice(selectedPositionIndex + 1);
 
         setCurrentString(newString);
         setDepth(depth + 1);
+
+        setDerivationHistory([
+            ...derivationHistory,
+            {
+                rule: `${selectedNonTerminal}→${rhs}`,
+                string: newString,
+                nonTerminal: selectedNonTerminal,
+                pos: selectedPosition,
+                rhs,
+            },
+        ]);
 
         // Normalize strings for comparison (remove all 'ε')
         const normalizedCurrentString = newString.replace(/ε/g, "");
         const normalizedTargetString = targetString.replace(/ε/g, "");
 
         if (normalizedCurrentString === normalizedTargetString) {
-            setGameWon(true); // Trigger win condition
+            setGameWon(true);
             return;
         }
 
         // Check if all non-terminals are finished
         if (![...newString].some(char => char >= "A" && char <= "Z")) {
-            setGameLost(true); // Trigger lose condition
+            setGameLost(true);
         }
 
         // Clear selections for the next iteration
@@ -84,11 +94,20 @@ const Game = () => {
         if (storedRules && storedTargetString && storedMaxDepth) {
             const parsedRules = JSON.parse(storedRules);
             setRules(parsedRules);
-            setCurrentString(parsedRules[0]?.lhs || "");
+            setCurrentString(parsedRules[0]?.lhs || ""); // Initialize current string with the start symbol
             setTargetString(storedTargetString);
             setMaxDepth(parseInt(storedMaxDepth));
             setMaxTimeSec(storedMaxTimeSec ? parseInt(storedMaxTimeSec) : 180);
-            setGrammarData({ name: parsedRules[0]?.lhs || "", children: [] });
+            // Initialize treeData with start symbol
+            setDerivationHistory([
+                {
+                    rule: "",
+                    string: parsedRules[0]?.lhs || "",
+                    nonTerminal: parsedRules[0]?.lhs || "",
+                    pos: 0,
+                    rhs: "",
+                },
+            ]);
             setIsLoading(false);
         } else {
             alert("Game setup is incomplete. Please start a new game.");
@@ -118,130 +137,136 @@ const Game = () => {
 
     return (
         <div className="min-h-screen flex flex-col items-center px-6 py-10 relative">
-            {/* Win Screen */}
-            {gameWon && (
-                <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
-                    <h1 className="text-4xl font-bold text-green-500 mb-4">You Won!</h1>
-                    <button
-                        onClick={() => navigate("/init")}
-                        className="cursor-pointer bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
-                    >
-                        Back to Menu
-                    </button>
-                </div>
-            )}
-
-            {/* Lose Screen */}
-            {gameLost && (
-                <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
-                    <h1 className="text-4xl font-bold text-red-500 mb-4">You Lost!</h1>
-                    <button
-                        onClick={() => navigate("/init")}
-                        className="cursor-pointer bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
-                    >
-                        Back to Menu
-                    </button>
-                </div>
-            )}
-
-            {/* Game Content */}
-            <GameHeading />
-            <div className="w-full max-w-3xl flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                    <Timer setTimerState={setIsTimerRunning} maxTimeSec={maxTimeSec} />
-                    <div className="text-right">
-                        <p className="font-semibold">Target String</p>
-                        <h2 className="text-5xl font-extrabold text-dCyan">{targetString}</h2>
-                    </div>
-                </div>
-
-                <div className="w-full">
-                    <h2 className="text-xl font-bold">Production Rules</h2>
-                    {rules.length === 0 ? (
-                        <p>No rules to display.</p>
-                    ) : (
-                        <ul className="p-1 mt-1 flex flex-wrap gap-1 w-full rounded border-white/20 border">
-                            {rules.map((rule, i) => (
-                                <li key={i} className="p-1 px-2 bg-white/10 rounded border border-white/20">
-                                    <span className="font-semibold">{rule.lhs} → </span>
-                                    <span>{rule.rhs.join(" | ").replace(/#/g, "ε")}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <div className="w-full">
-                    <h2 className="text-xl font-bold">Current String</h2>
-                    <p className="text-3xl font-mono">{currentString}</p>
-                </div>
-
-                <div className="w-full">
-                    <h2 className="text-xl font-bold">Select Non-Terminal</h2>
-                    <div className="flex gap-2 flex-wrap">
-                        {[...new Set(currentString.split("").filter(ch => ch >= "A" && ch <= "Z"))].map((nonTerminal, idx) => (
+            {/* Game Heading at the top center */}
+            <div className="w-full flex flex-col items-center mb-2">
+                <GameHeading />
+            </div>
+            {/* Split the rest of the screen into two halves */}
+            <div className="w-full flex flex-row items-start mt-4 max-w-7xl mx-auto">
+                {/* Left: Game Play */}
+                <div className="w-1/2 pr-4 relative flex flex-col items-center">
+                    {/* Win Screen */}
+                    {gameWon && (
+                        <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
+                            <h1 className="text-4xl font-bold text-green-500 mb-4">You Won!</h1>
                             <button
-                                key={idx}
-                                onClick={() => setSelectedNonTerminal(nonTerminal)}
-                                className={`cursor-pointer p-2 rounded border ${selectedNonTerminal === nonTerminal ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                onClick={() => navigate("/init")}
+                                className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
                             >
-                                {nonTerminal}
+                                Back to Menu
                             </button>
-                        ))}
-                    </div>
-                </div>
-
-                {selectedNonTerminal && (
-                    <div className="w-full">
-                        <h2 className="text-xl font-bold">Select Position</h2>
-                        <div className="flex gap-2 flex-wrap">
-                            {[...currentString].reduce((acc, char, idx) => {
-                                if (char === selectedNonTerminal) acc.push(idx);
-                                return acc;
-                            }, [] as number[]).map((pos, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setSelectedPosition(idx)}
-                                    className={`cursor-pointer p-2 rounded border ${selectedPosition === idx ? "bg-dCyan text-white" : "bg-white/10"}`}
-                                >
-                                    {pos}
-                                </button>
-                            ))}
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {selectedNonTerminal && selectedPosition !== null && (
-                    <div className="w-full">
-                        <h2 className="text-xl font-bold">Select Rule</h2>
-                        <div className="flex gap-2 flex-wrap">
-                            {rules.map((rule) => {
-                                if (rule.lhs !== selectedNonTerminal) return null;
-                                return rule.rhs.map((rhs, idx) => (
+                    {/* Lose Screen */}
+                    {gameLost && (
+                        <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
+                            <h1 className="text-4xl font-bold text-red-500 mb-4">You Lost!</h1>
+                            <button
+                                onClick={() => navigate("/init")}
+                                className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
+                            >
+                                Back to Menu
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Game Content */}
+                    <div className="w-full max-w-3xl flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                            <Timer setTimerState={setIsTimerRunning} maxTimeSec={maxTimeSec} />
+                            <div className="text-right">
+                                <p className="font-semibold">Target String</p>
+                                <h2 className="text-5xl font-extrabold text-dCyan">{targetString}</h2>
+                            </div>
+                        </div>
+
+                        <div className="w-full">
+                            <h2 className="text-xl font-bold">Production Rules</h2>
+                            {rules.length === 0 ? (
+                                <p>No rules to display.</p>
+                            ) : (
+                                <ul className="p-1 mt-1 flex flex-wrap gap-1 w-full rounded border-white/20 border">
+                                    {rules.map((rule, i) => (
+                                        <li key={i} className="p-1 px-2 bg-white/10 rounded border border-white/20">
+                                            <span className="font-semibold">{rule.lhs} → </span>
+                                            <span>{rule.rhs.join(" | ").replace(/#/g, "ε")}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="w-full">
+                            <h2 className="text-xl font-bold">Current String</h2>
+                            <p className="text-3xl font-mono">{currentString}</p>
+                        </div>
+
+                        <div className="w-full">
+                            <h2 className="text-xl font-bold">Select Non-Terminal</h2>
+                            <div className="flex gap-2 flex-wrap">
+                                {[...new Set(currentString.split("").filter(ch => ch >= "A" && ch <= "Z"))].map((nonTerminal, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => applyRule(idx)}
-                                        className="cursor-pointer p-2 rounded border bg-white/10"
+                                        onClick={() => setSelectedNonTerminal(nonTerminal)}
+                                        className={`p-2 rounded border ${selectedNonTerminal === nonTerminal ? "bg-dCyan text-white" : "bg-white/10"}`}
                                     >
-                                        {rhs.replace("#", "ε")}
+                                        {nonTerminal}
                                     </button>
-                                ));
-                            })}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
 
-                <div className="w-full">
-                    <h2 className="text-xl font-bold">Grammar Tree</h2>
-                    <div className="p-1 mt-1 w-full rounded border-white/20 border">
-                        <div id="treeWrapper" style={{ height: '30em' }}>
-                            <Tree data={grammarData} pathFunc={"diagonal"} orientation="vertical" />
+                        {selectedNonTerminal && (
+                            <div className="w-full">
+                                <h2 className="text-xl font-bold">Select Position</h2>
+                                <div className="flex gap-2 flex-wrap">
+                                    {[...currentString].reduce((acc, char, idx) => {
+                                        if (char === selectedNonTerminal) acc.push(idx);
+                                        return acc;
+                                    }, [] as number[]).map((pos, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setSelectedPosition(idx)}
+                                            className={`p-2 rounded border ${selectedPosition === idx ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                        >
+                                            {pos}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedNonTerminal && selectedPosition !== null && (
+                            <div className="w-full">
+                                <h2 className="text-xl font-bold">Select Rule</h2>
+                                <div className="flex gap-2 flex-wrap">
+                                    {rules.find(rule => rule.lhs === selectedNonTerminal)?.rhs.map((rhs, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => applyRule(idx)}
+                                            className="p-2 rounded border bg-white/10"
+                                        >
+                                            {rhs.replace("#", "ε")}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                {/* Right: Derivation Tree */}
+                <div className="w-1/2 pl-4 flex flex-col items-center">
+                    <div className="w-full flex flex-col items-center">
+                        <h2 className="text-2xl font-bold mb-2">Derivation Tree</h2>
+                        <div className="w-full flex justify-center">
+                            <div className="max-w-5xl w-full">
+                                <DerivationTree derivationHistory={derivationHistory} />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 };

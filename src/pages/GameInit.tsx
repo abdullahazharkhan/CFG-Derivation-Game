@@ -53,9 +53,15 @@ const GameInit = () => {
 
         function dfs(current: string, depth: number): boolean {
             if (depth > maxDepth) return false;
-            if (current === target) return true;
-            if (current.length > target.length) return false;
-            if (!target.startsWith(current.replace(/[A-Z#]/g, ""))) return false;
+            // Remove all non-terminals and all epsilon symbols ('ε' and '#') from current for prefix check
+            const normalizedTarget = target.replace(/ε|#/g, "");
+            const currentTerminals = current.replace(/[A-Zε#]/g, "");
+            if (!normalizedTarget.startsWith(currentTerminals)) return false;
+
+            // Remove all 'ε' and '#' and non-terminals from both for equality/length checks
+            const normalizedCurrent = current.replace(/[A-Zε#]/g, "");
+            if (normalizedCurrent === normalizedTarget) return true;
+            if (normalizedCurrent.length > normalizedTarget.length) return false;
 
             // Memoization check
             if (memo.has(current) && memo.get(current)!.has(depth)) {
@@ -237,7 +243,8 @@ const GameInit = () => {
         console.log(newRules);
 
         // 6) Check if the target string is derivable using recursive DFS
-        if (!checkCFGRecursive(rules, targetString, maxTreeDepth)) {
+        // Pass the normalized target string (remove all 'ε')
+        if (!checkCFGRecursive(rules, targetString.replace(/ε/g, ""), maxTreeDepth)) {
             alert("The target string cannot be derived with the given rules and depth.");
             setLoading(false);
             return;
@@ -245,7 +252,8 @@ const GameInit = () => {
 
         // Save validated data to localStorage
         localStorage.setItem("rules", JSON.stringify(newRules));
-        localStorage.setItem("targetString", targetString);
+        // Save normalized target string (remove all 'ε')
+        localStorage.setItem("targetString", targetString.replace(/ε/g, ""));
         localStorage.setItem("maxTreeDepth", maxTreeDepth.toString());
         localStorage.setItem("maxTimeSec", parsedTime.toString());
         setLoading(false);
