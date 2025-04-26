@@ -35,24 +35,24 @@ const GameInit = () => {
 
     const handleChecks = () => {
         setLoading(true);
-
+    
         // 1) Basic presence checks
         if (targetString.trim() === "") {
             alert("Please add a target string.");
             setLoading(false);
             return;
         }
-        if (maxTreeDepth < 0) {
-            alert("Please add a valid max tree depth.");
+        if (maxTreeDepth <= 0) {
+            alert("Please add a valid positive max tree depth.");
             setLoading(false);
             return;
         }
-
+    
         // 2) Gather LHS set, and scan RHS for terminals / non-terminals
         const lhsSet = new Set<string>();
         const usedNonTerms = new Set<string>();
         const usedTerms = new Set<string>();
-
+    
         for (const { lhs, rhs } of rules) {
             // LHS must be nonempty uppercase
             if (!lhs || lhs !== lhs.toUpperCase()) {
@@ -60,7 +60,7 @@ const GameInit = () => {
                 setLoading(false);
                 return;
             }
-
+    
             // RHS must be nonempty, not start/end with '|' or contain '||'
             if (
                 !rhs ||
@@ -72,16 +72,16 @@ const GameInit = () => {
                 setLoading(false);
                 return;
             }
-
+    
             lhsSet.add(lhs);
-            // classify each symbol in RHS
+            // Classify each symbol in RHS
             for (const ch of rhs) {
                 if (ch === "|") continue;
                 if (ch >= "A" && ch <= "Z") usedNonTerms.add(ch);
                 else if (ch >= "a" && ch <= "z") usedTerms.add(ch);
             }
         }
-
+    
         // 3) Every non-terminal you used must actually have a rule
         for (const nt of usedNonTerms) {
             if (!lhsSet.has(nt)) {
@@ -90,7 +90,7 @@ const GameInit = () => {
                 return;
             }
         }
-
+    
         // 4) Target string: only terminals, no uppercase
         for (const ch of targetString) {
             if (ch >= "A" && ch <= "Z") {
@@ -104,32 +104,67 @@ const GameInit = () => {
                 return;
             }
         }
-
+    
+        // 5) Append '#' to RHS of rules if not already present and sort the RHS
+        const updatedRules = rules.map(rule => {
+            const rhsParts = rule.rhs.split("|").map(part => part.trim());
+            const uniqueParts = Array.from(new Set(rhsParts)); // Remove duplicates
+    
+            // Sort the RHS parts
+            uniqueParts.sort((a, b) => {
+                const isANonTerminal = /[A-Z]/.test(a);
+                const isBNonTerminal = /[A-Z]/.test(b);
+                const isATerminal = /[a-z]/.test(a);
+                const isBTerminal = /[a-z]/.test(b);
+    
+                if (a === "#") return 1; // '#' goes last
+                if (b === "#") return -1;
+    
+                if (isANonTerminal && isATerminal && !(isBNonTerminal && isBTerminal)) return -1; // Non-terminal + terminal first
+                if (isBNonTerminal && isBTerminal && !(isANonTerminal && isATerminal)) return 1;
+    
+                if (isANonTerminal && !isATerminal && !(isBNonTerminal && !isBTerminal)) return -1; // Only non-terminals next
+                if (isBNonTerminal && !isBTerminal && !(isANonTerminal && !isATerminal)) return 1;
+    
+                if (!isANonTerminal && isATerminal && !(!isBNonTerminal && isBTerminal)) return -1; // Only terminals next
+                if (!isBNonTerminal && isBTerminal && !(!isANonTerminal && isATerminal)) return 1;
+    
+                return a.localeCompare(b); // Default alphabetical order
+            });
+    
+            if (!uniqueParts.includes("#")) {
+                uniqueParts.push("#"); // Add '#' if not present
+            }
+    
+            return { ...rule, rhs: uniqueParts.join(" | ") };
+        });
+    
         const newRules = Object.values(
-            rules.reduce((acc: Record<string, { lhs: string; rhs: string[] }>, { lhs, rhs }) => {
+            updatedRules.reduce((acc: Record<string, { lhs: string; rhs: string[] }>, { lhs, rhs }) => {
                 const parts = rhs
                     .split("|")
                     .map(s => s.trim())
                     .filter(Boolean);
-
+    
                 if (!acc[lhs]) {
                     acc[lhs] = { lhs, rhs: [] };
                 }
-
+    
                 acc[lhs].rhs.push(...parts);
-
+    
                 return acc;
             }, {} as Record<string, { lhs: string; rhs: string[] }>)
         );
+    
         console.log(newRules);
-
+    
+        // Save validated data to localStorage
         localStorage.setItem("rules", JSON.stringify(newRules));
         localStorage.setItem("targetString", targetString);
         localStorage.setItem("maxTreeDepth", maxTreeDepth.toString());
         setLoading(false);
         navigate("/game");
     };
-
 
     return (
         <div className='min-h-screen flex flex-col items-center px-6 py-10'>
