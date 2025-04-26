@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 
-const Timer = ({ setTimerState }: any) => {
-    const [secondsLeft, setSecondsLeft] = useState(180);
+const Timer = ({ setTimerState, maxTimeSec = 180 }: any) => {
+    const [secondsLeft, setSecondsLeft] = useState(maxTimeSec);
     const [isLessThanFifteen, setIsLessThanFifteen] = useState(false);
+
+    useEffect(() => {
+        setSecondsLeft(maxTimeSec);
+    }, [maxTimeSec]);
 
     useEffect(() => {
         if (secondsLeft <= 15) {
@@ -15,7 +19,7 @@ const Timer = ({ setTimerState }: any) => {
         }
 
         const interval = setInterval(() => {
-            setSecondsLeft((prev) => prev - 1);
+            setSecondsLeft((prev: number) => prev - 1);
         }, 1000);
 
         return () => clearInterval(interval);

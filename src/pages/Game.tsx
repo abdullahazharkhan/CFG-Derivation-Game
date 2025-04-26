@@ -16,6 +16,7 @@ const Game = () => {
     const [gameLost, setGameLost] = useState(false);
     const [gameWon, setGameWon] = useState(false); // New state for win condition
     const [isLoading, setIsLoading] = useState(true);
+    const [maxTimeSec, setMaxTimeSec] = useState(180);
 
     const applyRule = (ruleIdx: number) => {
         if (!selectedNonTerminal || selectedPosition === null) {
@@ -72,13 +73,15 @@ const Game = () => {
         const storedRules = localStorage.getItem("rules");
         const storedTargetString = localStorage.getItem("targetString");
         const storedMaxDepth = localStorage.getItem("maxTreeDepth");
+        const storedMaxTimeSec = localStorage.getItem("maxTimeSec");
 
         if (storedRules && storedTargetString && storedMaxDepth) {
             const parsedRules = JSON.parse(storedRules);
             setRules(parsedRules);
-            setCurrentString(parsedRules[0]?.lhs || ""); // Initialize current string with the start symbol
+            setCurrentString(parsedRules[0]?.lhs || "");
             setTargetString(storedTargetString);
             setMaxDepth(parseInt(storedMaxDepth));
+            setMaxTimeSec(storedMaxTimeSec ? parseInt(storedMaxTimeSec) : 180);
             setIsLoading(false);
         } else {
             alert("Game setup is incomplete. Please start a new game.");
@@ -97,7 +100,7 @@ const Game = () => {
             setGameLost(true); // Trigger lose condition
         }
     }, [depth, maxDepth, currentString, targetString]);
-``
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -138,7 +141,7 @@ const Game = () => {
             <GameHeading />
             <div className="w-full max-w-3xl flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                    <Timer setTimerState={setIsTimerRunning} />
+                    <Timer setTimerState={setIsTimerRunning} maxTimeSec={maxTimeSec} />
                     <div className="text-right">
                         <p className="font-semibold">Target String</p>
                         <h2 className="text-5xl font-extrabold text-dCyan">{targetString}</h2>

@@ -14,6 +14,7 @@ const GameInit = () => {
     const [ruleCnt, setRuleCnt] = useState(1);
     const [targetString, setTargetString] = useState("");
     const [maxTreeDepth, setMaxTreeDepth] = useState(0);
+    const [maxTimeSec, setMaxTimeSec] = useState("180");
     const [loading, setLoading] = useState(false);
 
     const handleDelete = (index: number) => {
@@ -33,9 +34,69 @@ const GameInit = () => {
         console.log(rules);
     }
 
+    const checkCFGRecursive = (
+        rules: { lhs: string; rhs: string }[],
+        target: string,
+        maxDepth: number
+    ): boolean => {
+        // Build grammar map: lhs -> array of rhs alternatives (as strings)
+        const grammar: Record<string, string[]> = {};
+        for (const { lhs, rhs } of rules) {
+            for (const prod of rhs.split("|").map(s => s.trim())) {
+                if (!grammar[lhs]) grammar[lhs] = [];
+                grammar[lhs].push(prod);
+            }
+        }
+
+        // Memoization cache: Map<string, Map<number, boolean>>
+        const memo = new Map<string, Map<number, boolean>>();
+
+        function dfs(current: string, depth: number): boolean {
+            if (depth > maxDepth) return false;
+            if (current === target) return true;
+            if (current.length > target.length) return false;
+            if (!target.startsWith(current.replace(/[A-Z#]/g, ""))) return false;
+
+            // Memoization check
+            if (memo.has(current) && memo.get(current)!.has(depth)) {
+                return memo.get(current)!.get(depth)!;
+            }
+
+            // Find first non-terminal in current string
+            for (let i = 0; i < current.length; i++) {
+                const ch = current[i];
+                if (ch >= "A" && ch <= "Z") {
+                    const prods = grammar[ch] || [];
+                    for (const prod of prods) {
+                        const next =
+                            current.slice(0, i) +
+                            (prod === "#" ? "" : prod) +
+                            current.slice(i + 1);
+                        if (dfs(next, depth + 1)) {
+                            // Memoize and return
+                            if (!memo.has(current)) memo.set(current, new Map());
+                            memo.get(current)!.set(depth, true);
+                            return true;
+                        }
+                    }
+                    // Memoize failure
+                    if (!memo.has(current)) memo.set(current, new Map());
+                    memo.get(current)!.set(depth, false);
+                    return false;
+                }
+            }
+            // If no non-terminals left, but not equal to target, fail
+            if (!memo.has(current)) memo.set(current, new Map());
+            memo.get(current)!.set(depth, false);
+            return false;
+        }
+
+        return dfs("S", 0);
+    };
+
     const handleChecks = () => {
         setLoading(true);
-    
+
         // 1) Basic presence checks
         if (targetString.trim() === "") {
             alert("Please add a target string.");
@@ -47,12 +108,29 @@ const GameInit = () => {
             setLoading(false);
             return;
         }
-    
+        if (targetString.length > 15) {
+            alert("Target string is too long (max 15 characters).");
+            setLoading(false);
+            return;
+        }
+        if (maxTreeDepth > 25) {
+            alert("Max tree depth is too large (max 25).");
+            setLoading(false);
+            return;
+        }
+        // Validate maxTimeSec as a number and >= 10
+        const parsedTime = parseInt(maxTimeSec, 10);
+        if (isNaN(parsedTime) || parsedTime < 10) {
+            alert("Please enter a valid time (minimum 10 seconds).");
+            setLoading(false);
+            return;
+        }
+
         // 2) Gather LHS set, and scan RHS for terminals / non-terminals
         const lhsSet = new Set<string>();
         const usedNonTerms = new Set<string>();
         const usedTerms = new Set<string>();
-    
+
         for (const { lhs, rhs } of rules) {
             // LHS must be nonempty uppercase
             if (!lhs || lhs !== lhs.toUpperCase()) {
@@ -60,7 +138,7 @@ const GameInit = () => {
                 setLoading(false);
                 return;
             }
-    
+
             // RHS must be nonempty, not start/end with '|' or contain '||'
             if (
                 !rhs ||
@@ -72,7 +150,7 @@ const GameInit = () => {
                 setLoading(false);
                 return;
             }
-    
+
             lhsSet.add(lhs);
             // Classify each symbol in RHS
             for (const ch of rhs) {
@@ -81,7 +159,7 @@ const GameInit = () => {
                 else if (ch >= "a" && ch <= "z") usedTerms.add(ch);
             }
         }
-    
+
         // 3) Every non-terminal you used must actually have a rule
         for (const nt of usedNonTerms) {
             if (!lhsSet.has(nt)) {
@@ -90,7 +168,7 @@ const GameInit = () => {
                 return;
             }
         }
-    
+
         // 4) Target string: only terminals, no uppercase
         for (const ch of targetString) {
             if (ch >= "A" && ch <= "Z") {
@@ -104,64 +182,72 @@ const GameInit = () => {
                 return;
             }
         }
-    
+
         // 5) Append '#' to RHS of rules if not already present and sort the RHS
         const updatedRules = rules.map(rule => {
             const rhsParts = rule.rhs.split("|").map(part => part.trim());
             const uniqueParts = Array.from(new Set(rhsParts)); // Remove duplicates
-    
+
             // Sort the RHS parts
             uniqueParts.sort((a, b) => {
                 const isANonTerminal = /[A-Z]/.test(a);
                 const isBNonTerminal = /[A-Z]/.test(b);
                 const isATerminal = /[a-z]/.test(a);
                 const isBTerminal = /[a-z]/.test(b);
-    
+
                 if (a === "#") return 1; // '#' goes last
                 if (b === "#") return -1;
-    
+
                 if (isANonTerminal && isATerminal && !(isBNonTerminal && isBTerminal)) return -1; // Non-terminal + terminal first
                 if (isBNonTerminal && isBTerminal && !(isANonTerminal && isATerminal)) return 1;
-    
+
                 if (isANonTerminal && !isATerminal && !(isBNonTerminal && !isBTerminal)) return -1; // Only non-terminals next
                 if (isBNonTerminal && !isBTerminal && !(isANonTerminal && !isATerminal)) return 1;
-    
+
                 if (!isANonTerminal && isATerminal && !(!isBNonTerminal && isBTerminal)) return -1; // Only terminals next
                 if (!isBNonTerminal && isBTerminal && !(!isANonTerminal && isATerminal)) return 1;
-    
+
                 return a.localeCompare(b); // Default alphabetical order
             });
-    
+
             if (!uniqueParts.includes("#")) {
                 uniqueParts.push("#"); // Add '#' if not present
             }
-    
+
             return { ...rule, rhs: uniqueParts.join(" | ") };
         });
-    
+
         const newRules = Object.values(
             updatedRules.reduce((acc: Record<string, { lhs: string; rhs: string[] }>, { lhs, rhs }) => {
                 const parts = rhs
                     .split("|")
                     .map(s => s.trim())
                     .filter(Boolean);
-    
+
                 if (!acc[lhs]) {
                     acc[lhs] = { lhs, rhs: [] };
                 }
-    
+
                 acc[lhs].rhs.push(...parts);
-    
+
                 return acc;
             }, {} as Record<string, { lhs: string; rhs: string[] }>)
         );
-    
+
         console.log(newRules);
-    
+
+        // 6) Check if the target string is derivable using recursive DFS
+        if (!checkCFGRecursive(rules, targetString, maxTreeDepth)) {
+            alert("The target string cannot be derived with the given rules and depth.");
+            setLoading(false);
+            return;
+        }
+
         // Save validated data to localStorage
         localStorage.setItem("rules", JSON.stringify(newRules));
         localStorage.setItem("targetString", targetString);
         localStorage.setItem("maxTreeDepth", maxTreeDepth.toString());
+        localStorage.setItem("maxTimeSec", parsedTime.toString());
         setLoading(false);
         navigate("/game");
     };
@@ -238,6 +324,18 @@ const GameInit = () => {
                             className="mt-1 block w-full rounded border-white/20 border p-1 px-2"
                         />
                     </div>
+                    <div>
+                        <label htmlFor="maxTimeSec" className="block text-lg font-medium ">Time Limit (seconds)</label>
+                        <input
+                            value={maxTimeSec}
+                            onChange={(e) => setMaxTimeSec(e.target.value)}
+                            placeholder="e.g. 30"
+                            type="text"
+                            id="maxTimeSec"
+                            className="mt-1 block w-full rounded border-white/20 border p-1 px-2"
+                        />
+                        <p className="text-xs text-white/70">Minimum allowed is 10 seconds.</p>
+                    </div>
                 </form>
                 <button
                     onClick={handleChecks}
@@ -251,4 +349,4 @@ const GameInit = () => {
     )
 }
 
-export default GameInit
+export default GameInit;
