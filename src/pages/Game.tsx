@@ -22,6 +22,9 @@ const Game = () => {
         { rule: string; string: string; nonTerminal: string; pos: number; rhs: string }[]
     >([]);
 
+    // Track lose reason
+    const [, setLoseReason] = useState<null | "time" | "depth" | "nonterminals">(null);
+
     const applyRule = (ruleIdx: number) => {
         if (!selectedNonTerminal || selectedPosition === null) {
             alert("Please select a non-terminal and its position first.");
@@ -72,12 +75,15 @@ const Game = () => {
 
         if (normalizedCurrentString === normalizedTargetString) {
             setGameWon(true);
+            setIsTimerRunning(false); // Stop timer on win
             return;
         }
 
         // Check if all non-terminals are finished
         if (![...newString].some(char => char >= "A" && char <= "Z")) {
             setGameLost(true);
+            setIsTimerRunning(false); // Stop timer on lose
+            setLoseReason("nonterminals");
         }
 
         // Clear selections for the next iteration
@@ -116,79 +122,108 @@ const Game = () => {
     }, [navigate]);
 
     useEffect(() => {
-        if (!isTimerRunning) {
+        // Only set gameLost if not already won
+        if (!isTimerRunning && !gameWon) {
             setGameLost(true); // Trigger lose condition
+            setLoseReason("time");
         }
-    }, [isTimerRunning]);
+    }, [isTimerRunning, gameWon]);
 
     useEffect(() => {
-        if (depth > 0 && depth >= maxDepth && currentString.replace(/ε/g, "") !== targetString.replace(/ε/g, "")) {
-            setGameLost(true); // Trigger lose condition
+        if (
+            depth > 0 &&
+            depth >= maxDepth &&
+            currentString.replace(/ε/g, "") !== targetString.replace(/ε/g, "")
+        ) {
+            if (!gameWon) {
+                setGameLost(true); // Trigger lose condition
+                setIsTimerRunning(false); // Stop timer on lose
+                setLoseReason("depth");
+            }
         }
-    }, [depth, maxDepth, currentString, targetString]);
+    }, [depth, maxDepth, currentString, targetString, gameWon]);
+
+    // Stop timer if game is won or lost
+    useEffect(() => {
+        if (gameWon || gameLost) {
+            setIsTimerRunning(false);
+        }
+    }, [gameWon, gameLost]);
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p>Loading...</p>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-neutral-900 to-zinc-900">
+                <div className="bg-neutral-900/80 rounded-2xl p-8 shadow-lg border border-white/10 flex flex-col items-center">
+                    <span className="animate-spin text-4xl mb-2">⏳</span>
+                    <p className="text-xl text-white/80 font-semibold">Loading Game...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex flex-col items-center px-6 py-10 relative">
-            {/* Game Heading at the top center */}
+        <div className='min-h-screen flex flex-col items-center px-6 py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>            {/* Game Heading at the top center */}
             <div className="w-full flex flex-col items-center mb-2">
                 <GameHeading />
             </div>
+            {/* Gap between heading and content */}
+            <div className="h-8" />
             {/* Split the rest of the screen into two halves */}
-            <div className="w-full flex flex-row items-start mt-4 max-w-7xl mx-auto">
+            <div className="w-full flex flex-row items-start mt-4 max-w-7xl mx-auto gap-8">
                 {/* Left: Game Play */}
                 <div className="w-1/2 pr-4 relative flex flex-col items-center">
                     {/* Win Screen */}
                     {gameWon && (
-                        <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
-                            <h1 className="text-4xl font-bold text-green-500 mb-4">You Won!</h1>
-                            <button
-                                onClick={() => navigate("/init")}
-                                className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
-                            >
-                                Back to Menu
-                            </button>
+                        <div className="absolute inset-0 flex items-center justify-center z-20">
+                            <div className="bg-black/70 flex flex-col items-center justify-center w-full h-full backdrop-blur-[3px] rounded-2xl">
+                                <h1 className="text-5xl font-extrabold text-green-400 mb-6 drop-shadow-lg animate-bounce">🎉 You Won!</h1>
+                                <p className="text-lg text-white/90 mb-4">Congratulations! You matched the target string.</p>
+                                <button
+                                    onClick={() => navigate("/init")}
+                                    className="bg-gradient-to-r from-green-600 to-green-400 text-white px-8 py-3 rounded-xl shadow-lg hover:from-green-700 hover:to-green-500 font-bold text-lg transition-all"
+                                >
+                                    Back to Menu
+                                </button>
+                            </div>
                         </div>
                     )}
 
                     {/* Lose Screen */}
-                    {gameLost && (
-                        <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center z-10 backdrop-blur-[3px]">
-                            <h1 className="text-4xl font-bold text-red-500 mb-4">You Lost!</h1>
-                            <button
-                                onClick={() => navigate("/init")}
-                                className="bg-dCyan text-white px-4 py-2 rounded shadow-md hover:bg-dCyan/80"
-                            >
-                                Back to Menu
-                            </button>
+                    {!gameWon && gameLost && (
+                        <div className="absolute inset-0 flex items-center justify-center z-20">
+                            <div className="bg-black/70 flex flex-col items-center justify-center w-full h-full backdrop-blur-[3px] rounded-2xl">
+                                <h1 className="text-5xl font-extrabold text-red-400 mb-6 drop-shadow-lg animate-pulse">😢 You Lost!</h1>
+                                <p className="text-lg text-white/90 mb-4">
+                                    Sorry, you couldn't derive the target string this time. Try again!
+                                </p>
+                                <button
+                                    onClick={() => navigate("/init")}
+                                    className="bg-gradient-to-r from-gray-700 to-gray-500 text-white px-8 py-3 rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 font-bold text-lg transition-all"
+                                >
+                                    Back to Menu
+                                </button>
+                            </div>
                         </div>
                     )}
 
                     {/* Game Content */}
-                    <div className="w-full max-w-3xl flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
+                    <div className="w-full max-w-3xl flex flex-col gap-4 bg-neutral-900/80 rounded-2xl p-6 shadow-lg border border-white/10">
+                        <div className="flex justify-between items-center mb-2">
                             <Timer setTimerState={setIsTimerRunning} maxTimeSec={maxTimeSec} />
                             <div className="text-right">
-                                <p className="font-semibold">Target String</p>
-                                <h2 className="text-5xl font-extrabold text-dCyan">{targetString}</h2>
+                                <p className="font-semibold text-white/80">Target String</p>
+                                <h2 className="text-5xl font-extrabold text-green-400 drop-shadow">{targetString}</h2>
                             </div>
                         </div>
 
                         <div className="w-full">
-                            <h2 className="text-xl font-bold">Production Rules</h2>
+                            <h2 className="text-xl font-bold text-white/90 mb-1">Production Rules</h2>
                             {rules.length === 0 ? (
-                                <p>No rules to display.</p>
+                                <p className="text-white/60">No rules to display.</p>
                             ) : (
-                                <ul className="p-1 mt-1 flex flex-wrap gap-1 w-full rounded border-white/20 border">
+                                <ul className="p-1 mt-1 flex flex-wrap gap-2 w-full rounded border-white/20 border bg-black/20">
                                     {rules.map((rule, i) => (
-                                        <li key={i} className="p-1 px-2 bg-white/10 rounded border border-white/20">
+                                        <li key={i} className="p-1 px-2 bg-neutral-800 rounded border border-white/20 text-white/90">
                                             <span className="font-semibold">{rule.lhs} → </span>
                                             <span>{rule.rhs.join(" | ").replace(/#/g, "ε")}</span>
                                         </li>
@@ -198,18 +233,22 @@ const Game = () => {
                         </div>
 
                         <div className="w-full">
-                            <h2 className="text-xl font-bold">Current String</h2>
-                            <p className="text-3xl font-mono">{currentString}</p>
+                            <h2 className="text-xl font-bold text-white/90 mb-1">Current String</h2>
+                            <p className="text-3xl font-mono text-green-300 bg-black/30 rounded px-2 py-1">{currentString}</p>
                         </div>
 
                         <div className="w-full">
-                            <h2 className="text-xl font-bold">Select Non-Terminal</h2>
+                            <h2 className="text-xl font-bold text-white/90 mb-1">Select Non-Terminal</h2>
                             <div className="flex gap-2 flex-wrap">
                                 {[...new Set(currentString.split("").filter(ch => ch >= "A" && ch <= "Z"))].map((nonTerminal, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedNonTerminal(nonTerminal)}
-                                        className={`p-2 rounded border ${selectedNonTerminal === nonTerminal ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                        className={`p-2 rounded border font-mono text-lg transition-all ${
+                                            selectedNonTerminal === nonTerminal
+                                                ? "bg-green-500 text-white border-green-600 shadow"
+                                                : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
+                                        }`}
                                     >
                                         {nonTerminal}
                                     </button>
@@ -219,7 +258,7 @@ const Game = () => {
 
                         {selectedNonTerminal && (
                             <div className="w-full">
-                                <h2 className="text-xl font-bold">Select Position</h2>
+                                <h2 className="text-xl font-bold text-white/90 mb-1">Select Position</h2>
                                 <div className="flex gap-2 flex-wrap">
                                     {[...currentString].reduce((acc, char, idx) => {
                                         if (char === selectedNonTerminal) acc.push(idx);
@@ -228,7 +267,11 @@ const Game = () => {
                                         <button
                                             key={idx}
                                             onClick={() => setSelectedPosition(idx)}
-                                            className={`p-2 rounded border ${selectedPosition === idx ? "bg-dCyan text-white" : "bg-white/10"}`}
+                                            className={`p-2 rounded border font-mono text-lg transition-all ${
+                                                selectedPosition === idx
+                                                    ? "bg-green-500 text-white border-green-600 shadow"
+                                                    : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
+                                            }`}
                                         >
                                             {pos}
                                         </button>
@@ -239,13 +282,13 @@ const Game = () => {
 
                         {selectedNonTerminal && selectedPosition !== null && (
                             <div className="w-full">
-                                <h2 className="text-xl font-bold">Select Rule</h2>
+                                <h2 className="text-xl font-bold text-white/90 mb-1">Select Rule</h2>
                                 <div className="flex gap-2 flex-wrap">
                                     {rules.find(rule => rule.lhs === selectedNonTerminal)?.rhs.map((rhs, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => applyRule(idx)}
-                                            className="p-2 rounded border bg-white/10"
+                                            className="p-2 rounded border font-mono text-lg bg-neutral-800 text-white/90 border-white/20 hover:bg-green-500 hover:text-white transition-all"
                                         >
                                             {rhs.replace("#", "ε")}
                                         </button>
@@ -257,8 +300,8 @@ const Game = () => {
                 </div>
                 {/* Right: Derivation Tree */}
                 <div className="w-1/2 pl-4 flex flex-col items-center">
-                    <div className="w-full flex flex-col items-center">
-                        <h2 className="text-2xl font-bold mb-2">Derivation Tree</h2>
+                    <div className="w-full flex flex-col items-center bg-neutral-900/80 rounded-2xl p-6 shadow-lg border border-white/10">
+                        <h2 className="text-2xl font-bold mb-2 text-white/90">Derivation Tree</h2>
                         <div className="w-full flex justify-center">
                             <div className="max-w-5xl w-full">
                                 <DerivationTree derivationHistory={derivationHistory} />

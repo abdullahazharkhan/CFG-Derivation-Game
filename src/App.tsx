@@ -1,5 +1,4 @@
 import { Link } from 'react-router';
-import './App.css';
 import GameHeading from './components/GameHeading';
 
 function App() {
@@ -10,31 +9,47 @@ function App() {
     "Start generating strings using your CFG rules!",
     "Match the target string within time and depth – and you WIN!",
     "If the time runs out or the tree gets too deep without a match – you lose!",
-    "After the game, explore all derivation trees and see if the target string was even possible.",
     "Enjoy the challenge!",
   ];
 
   return (
-    <div className='min-h-screen flex flex-col items-center px-6 py-10'>
+    <div className='min-h-screen flex flex-col items-center px-6 py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>
       <GameHeading />
+      <div className="h-8" /> {/* Gap between heading and content */}
       <div className='w-full max-w-3xl flex flex-col items-center justify-center'>
-        <h2 className='text-2xl font-semibold shadow-dCyan underline my-6 text-center'>
-          Game Flow
-        </h2>
-        <ul className='space-y-1 text-lg font-medium'>
-          {rules.map((rule, index) => (
-            <li key={index} className='flex items-start gap-2'>
-              <span className='text-dCyan font-bold'>{index + 1}.</span>
-              <span>{rule}</span>
-            </li>
-          ))}
-        </ul>
-        <div className='mt-6 flex justify-center w-full'>
+        <div className="bg-gradient-to-br from-white/10 via-dCyan/10 to-cyan-900/10 border border-white/20 rounded-2xl p-8 shadow-2xl w-full mb-8">
+          <div className="flex flex-col items-center mb-6">
+            <span className="text-5xl mb-2">🧩</span>
+            <h2 className='text-3xl font-extrabold text-dCyan text-center tracking-tight mb-1 drop-shadow'>
+              Welcome!
+            </h2>
+            <p className="text-lg text-white/80 text-center font-medium mb-1">
+              The ultimate Context-Free Grammar Derivation Game
+            </p>
+            <p className="text-base text-white/70 text-center max-w-xl">
+              Challenge yourself to generate your target string using context-free grammar rules. Can you beat the clock and the tree depth?
+            </p>
+          </div>
+          <div className="my-6">
+            <h3 className='text-2xl font-semibold text-dCyan underline mb-4 text-center'>
+              Game Flow
+            </h3>
+            <ol className='space-y-1 text-lg font-medium list-decimal list-inside'>
+              {rules.map((rule, index) => (
+                <li key={index} className='flex items-start gap-2'>
+                  <span className='text-dCyan font-bold'>{index + 1}.</span>
+                  <span>{rule}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+        <div className='mt-4 flex justify-center w-full'>
           <Link
             to={"init"}
-            className='bg-dCyan hover:bg-dCyan/80 w-full text-white text-center font-bold py-2 px-8 rounded text-xl shadow-md transition-transform duration-200'
+            className='bg-gradient-to-r from-dCyan to-cyan-400 hover:from-cyan-700 hover:to-dCyan w-full text-white text-center font-bold py-3 px-10 rounded-xl text-2xl shadow-xl transition-transform duration-200 tracking-wide'
           >
-            Play the Game!
+            🚀 Play the Game!
           </Link>
         </div>
       </div>

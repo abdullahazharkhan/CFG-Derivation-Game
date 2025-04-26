@@ -56,8 +56,62 @@ const DerivationTree = ({ derivationHistory }: { derivationHistory: any[] }) => 
     const treeData = useMemo(() => buildTreeFromHistory(derivationHistory), [derivationHistory]);
     if (!treeData) return null;
     return (
-        <div className="p-1 w-full rounded border-white/20 border bg-white/5" style={{ height: '80vh', minHeight: 400 }}>
-            <Tree data={treeData} pathFunc={"diagonal"} orientation="vertical" />
+        <div
+            className="p-4 w-full rounded-2xl border-white/20 border bg-gradient-to-br from-[#18181b] via-[#23272f] to-[#18181b] shadow-2xl flex items-center justify-center"
+            style={{ height: '80vh', minHeight: 400, position: "relative", background: "linear-gradient(135deg, #23272f 60%, #18181b 100%)" }}
+        >
+            {/* SVG gradients for node backgrounds */}
+            <svg width="0" height="0">
+                <defs>
+                    <linearGradient id="mainNodeGradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#fff" />
+                        <stop offset="100%" stopColor="#e5e7eb" /> {/* zinc-200 */}
+                    </linearGradient>
+                    <linearGradient id="leafNodeGradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#f1f5f9" /> {/* zinc-50 */}
+                        <stop offset="100%" stopColor="#e5e7eb" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <Tree
+                data={treeData}
+                pathFunc="diagonal"
+                orientation="vertical"
+                translate={{ x: 400, y: 60 }}
+                zoomable={true}
+                collapsible={false}
+                separation={{ siblings: 1.2, nonSiblings: 2 }}
+                renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
+                    <g>
+                        <circle
+                            r={nodeDatum.children ? 24 : 20}
+                            fill={nodeDatum.children ? "url(#mainNodeGradient)" : "url(#leafNodeGradient)"}
+                            stroke="#fff"
+                            strokeWidth={2}
+                            style={{
+                                filter: "drop-shadow(0 4px 16px #2228)",
+                                cursor: "pointer",
+                            }}
+                            onClick={toggleNode}
+                        />
+                        <text
+                            dy={7}
+                            textAnchor="middle"
+                            fontSize={nodeDatum.children ? "1.25rem" : "1.1rem"}
+                            fontWeight={700}
+                            fill="#23272f"
+                            style={{
+                                textShadow: "0 2px 12px #fff, 0 0px 2px #fff",
+                                letterSpacing: "0.04em",
+                                userSelect: "none",
+                                pointerEvents: "none",
+                            }}
+                        >
+                            {nodeDatum.name}
+                        </text>
+                    </g>
+                )}
+            />
         </div>
     );
 };
