@@ -18,7 +18,7 @@ function App() {
     <div className='min-h-screen flex flex-col items-center px-6 py-10'>
       <GameHeading />
       <div className='w-full max-w-3xl flex flex-col items-center justify-center'>
-        <h2 className='text-2xl font-semibold shadow-dCyan underline underline-offset-4 my-6 text-center'>
+        <h2 className='text-2xl font-semibold shadow-dCyan underline my-6 text-center'>
           Game Flow
         </h2>
         <ul className='space-y-1 text-lg font-medium'>
