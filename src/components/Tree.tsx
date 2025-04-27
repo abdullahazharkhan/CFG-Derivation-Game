@@ -86,6 +86,7 @@ const DerivationTree = ({
 }: {
     derivationHistory: { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[];
 }) => {
+    const currString = derivationHistory[derivationHistory.length - 1].string;
     const treeData = useMemo(
         () => buildTreeFromHistory(derivationHistory),
         [derivationHistory]
@@ -111,7 +112,7 @@ const DerivationTree = ({
                     <g>
                         <circle
                             r={nodeDatum.children ? 24 : 20}
-                            fill="#339989"
+                            fill={nodeDatum.children ? "#339989" : "#2228"}
                             stroke="#339989"
                             strokeWidth={2}
                             style={{ filter: "drop-shadow(0 4px 16px #2228)" }}
