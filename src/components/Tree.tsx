@@ -1,97 +1,79 @@
 import { useMemo } from "react";
 import Tree from "react-d3-tree";
-import "./custom-tree.css"
+import "./custom-tree.css";
 
-// Recursively walks the existing children of `node` in preorder,
-// looking for the Nth (targetPos) un-expanded occurrence of `nonTerminal`.
-// When found, replaces that child with its RHS.
-function expandNodeByPreorder(
-    node: any,
-    nonTerminal: string,
-    targetPos: number,
-    rhs: string,
-    alternatives: string[],
-    parent: string,
-    counter: { value: number }
-): boolean {
-    // if this node has no children, there is nothing to traverse
-    if (!node.children) return false;
-    // console.log(`node: ${node} nonTerminal: ${nonTerminal} targetPos: ${targetPos} rhs: ${rhs} alternatives: ${alternatives}`);
-    for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        // Found an unexpanded matching non-terminal?
-        // console.log("child.name: ", child.name);
-        // console.log("rhs: ", rhs);
-        if (child.name.split("").includes(nonTerminal) && !child._expanded && child.name === parent) {
-            // if (child.name.split("").includes(nonTerminal) && child.name === parent) {
-            // console.log("counter: ", counter.value);
-            // console.log("targetPos: ", targetPos);
-            // if (counter.value === targetPos) {
-                // Mark it expanded
-                child._expanded = true;
-                // Attach its RHS as children
-                if (rhs === "ε") {
-                    child.children = [{ name: "ε" }];
-                } else {
-                    child.children = alternatives.map((ch: string) => ({
-                        // name: ch === "#" ? "ε" : (`${ch} + ${counter.value}`),
-                        name: ch === "#" ? "ε" : ch,
-                    }));
-                }
-                return true;
-            // }
-            // Otherwise, count it and keep going
-            counter.value++;
-            // console.log("counter after: ", counter.value);
-        }
-
-        // Recurse into this child
-        if (expandNodeByPreorder(child, nonTerminal, targetPos, rhs, alternatives, parent, counter)) {
-            // console.log("ider aya")
-            return true;
-        }
-    }
-
-    return false;
+// Helper to get rules from localStorage
+function getRulesFromStorage() {
+    const storedRules = localStorage.getItem("rules");
+    if (!storedRules) return [];
+    return JSON.parse(storedRules);
 }
 
-function buildTreeFromHistory(
-    history: { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[]) {
-
-    // Start with the root S
-    const root: any = { name: "S", _expanded: true };
-
-    if (!history || history.length < 2) {
-        return root;
+// Recursively build all possible derivations for a given string up to a max depth
+function buildAllDerivations(
+    str: string,
+    rules: { lhs: string; rhs: string[] }[],
+    depth: number,
+    maxDepth: number
+): { name: string; children?: ReturnType<typeof buildAllDerivations>[] } {
+    // If no non-terminals, return this as a leaf
+    if (!/[A-Z]/.test(str)) {
+        return { name: str.replace(/#/g, "ε") };
     }
-    // Initialize root’s first expansion from history[1].string
-    root.children = history[1].alternatives.map((ch: string) => ({
-        name: ch === "#" ? "ε" : ch,
-    }));
-
-    console.log(history);
-
-    // Apply each further derivation step
-    for (let stepIdx = 2; stepIdx < history.length; stepIdx++) {
-        const { nonTerminal, pos, rhs, alternatives, parent } = history[stepIdx];
-        // walk the tree and expand the pos-th occurrence of nonTerminal
-        expandNodeByPreorder(root, nonTerminal, pos, rhs, alternatives, parent, { value: 0 });
+    // If max depth reached, show cutoff marker but still expand to show at least one more level
+    if (depth >= maxDepth) {
+        return { name: str.replace(/#/g, "ε") + " ..." };
     }
 
-    return root;
+    // Find first non-terminal in the string
+    for (let idx = 0; idx < str.length; idx++) {
+        const ch = str[idx];
+        if (ch >= "A" && ch <= "Z") {
+            // Find rules for this non-terminal
+            const rule = rules.find(r => r.lhs === ch);
+            if (!rule || !rule.rhs || rule.rhs.length === 0) break;
+            // For each production, create a child node
+            const children = rule.rhs.map(rhs => {
+                const replaced = str.slice(0, idx) + rhs + str.slice(idx + 1);
+                return buildAllDerivations(replaced, rules, depth + 1, maxDepth);
+            });
+            return {
+                name: str.replace(/#/g, "ε"),
+                children,
+            };
+        }
+    }
+    // If no non-terminals found (shouldn't reach here), return as leaf
+    return { name: str.replace(/#/g, "ε") };
 }
 
 const DerivationTree = ({
     derivationHistory,
+    maxDepth: propMaxDepth,
 }: {
     derivationHistory: { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[];
+    maxDepth?: number;
 }) => {
-    const currString = derivationHistory[derivationHistory.length - 1].string;
+    // Get rules from localStorage
+    const rules = useMemo(() => getRulesFromStorage(), []);
+    // Dynamically set max depth: number of derivation steps performed (or prop override)
+    const maxDepth = propMaxDepth ?? Math.max(1, derivationHistory.length - 1);
+
+    // Always start from the start symbol (first rule's lhs)
+    const startSymbol = rules[0]?.lhs || "S";
     const treeData = useMemo(
-        () => buildTreeFromHistory(derivationHistory),
-        [derivationHistory]
+        () => buildAllDerivations(startSymbol, rules, 0, maxDepth),
+        [rules, maxDepth]
     );
-    console.log(treeData);
+
+    // Helper to compute rectangle size based on text
+    function getRectSize(text: string) {
+        const len = text.length;
+        const width = Math.max(40, len * 18);
+        const height = 40;
+        return { width, height };
+    }
+
     if (!treeData) return null;
     return (
         <div
@@ -109,32 +91,40 @@ const DerivationTree = ({
                 branchNodeClassName="node__branch"
                 leafNodeClassName="node__leaf"
                 separation={{ siblings: 1.2, nonSiblings: 2 }}
-                renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
-                    <g>
-                        <circle
-                            r={nodeDatum.children ? 24 : 20}
-                            fill={nodeDatum.children ? "#339989" : "#2228"}
-                            stroke="#339989"
-                            strokeWidth={2}
-                            style={{ filter: "drop-shadow(0 4px 16px #2228)" }}
-                            onClick={toggleNode}
-                        />
-                        <text
-                            dy={7}
-                            textAnchor="middle"
-                            fontSize={nodeDatum.children ? "1.25rem" : "1.1rem"}
-                            fill="#fff"
-                            stroke="#fff"
-                            style={{
-                                letterSpacing: "0.04em",
-                                userSelect: "none",
-                                pointerEvents: "none",
-                            }}
-                        >
-                            {nodeDatum.name}
-                        </text>
-                    </g>
-                )}
+                renderCustomNodeElement={({ nodeDatum, toggleNode }) => {
+                    const { width, height } = getRectSize(nodeDatum.name);
+                    return (
+                        <g>
+                            <rect
+                                x={-width / 2}
+                                y={-height / 2}
+                                width={width}
+                                height={height}
+                                rx={16}
+                                ry={16}
+                                fill={nodeDatum.children ? "#339989" : "#2228"}
+                                stroke="#339989"
+                                strokeWidth={2}
+                                style={{ filter: "drop-shadow(0 4px 16px #2228)" }}
+                                onClick={toggleNode}
+                            />
+                            <text
+                                dy={7}
+                                textAnchor="middle"
+                                fontSize={nodeDatum.children ? "1.25rem" : "1.1rem"}
+                                fill="#fff"
+                                stroke="#fff"
+                                style={{
+                                    letterSpacing: "0.04em",
+                                    userSelect: "none",
+                                    pointerEvents: "none",
+                                }}
+                            >
+                                {nodeDatum.name}
+                            </text>
+                        </g>
+                    );
+                }}
             />
         </div>
     );

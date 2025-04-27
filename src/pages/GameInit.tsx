@@ -13,7 +13,7 @@ const GameInit = () => {
     ]);
     const [ruleCnt, setRuleCnt] = useState(1);
     const [targetString, setTargetString] = useState("");
-    const [maxTreeDepth, setMaxTreeDepth] = useState(0);
+    const [maxTreeDepth, setMaxTreeDepth] = useState(10);
     const [maxTimeSec, setMaxTimeSec] = useState("180");
     const [loading, setLoading] = useState(false);
 
@@ -119,8 +119,8 @@ const GameInit = () => {
             setLoading(false);
             return;
         }
-        if (maxTreeDepth > 25) {
-            alert("Max tree depth is too large (max 25). Let's keep it reasonable!");
+        if (maxTreeDepth > 10) {
+            alert("Max tree depth is too large (max 10). Let's keep it reasonable!");
             setLoading(false);
             return;
         }
@@ -381,10 +381,10 @@ const GameInit = () => {
                                 type="number"
                                 id="maxTreeDepth"
                                 min={1}
-                                max={25}
+                                max={10}
                                 className="mt-1 block w-full rounded border-white/20 border p-1 px-2"
                             />
-                            <p className="text-xs text-white/70 mt-1">How many derivation steps are allowed? (1-25)</p>
+                            <p className="text-xs text-white/70 mt-1">How many derivation steps are allowed? (1-10)</p>
                         </div>
                         {/* Time Limit Section */}
                         <div className="bg-white/10 border border-white/20 rounded-lg p-4 mb-4">
