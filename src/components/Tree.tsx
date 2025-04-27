@@ -11,6 +11,7 @@ function expandNodeByPreorder(
     targetPos: number,
     rhs: string,
     alternatives: string[],
+    parent: string,
     counter: { value: number }
 ): boolean {
     // if this node has no children, there is nothing to traverse
@@ -21,7 +22,7 @@ function expandNodeByPreorder(
         // Found an unexpanded matching non-terminal?
         // console.log("child.name: ", child.name);
         // console.log("rhs: ", rhs);
-        if (child.name.split("").includes(nonTerminal) && !child._expanded) {
+        if (child.name.split("").includes(nonTerminal) && !child._expanded && child.name === parent) {
             // console.log("counter: ", counter.value);
             // console.log("targetPos: ", targetPos);
             if (counter.value === targetPos) {
@@ -55,7 +56,7 @@ function expandNodeByPreorder(
 }
 
 function buildTreeFromHistory(
-    history: { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[]) {
+    history: { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[]) {
 
     // Start with the root S
     const root: any = { name: "S", _expanded: true };
@@ -72,9 +73,9 @@ function buildTreeFromHistory(
 
     // Apply each further derivation step
     for (let stepIdx = 2; stepIdx < history.length; stepIdx++) {
-        const { nonTerminal, pos, rhs, alternatives } = history[stepIdx];
+        const { nonTerminal, pos, rhs, alternatives, parent } = history[stepIdx];
         // walk the tree and expand the pos-th occurrence of nonTerminal
-        expandNodeByPreorder(root, nonTerminal, pos, rhs, alternatives, { value: 0 });
+        expandNodeByPreorder(root, nonTerminal, pos, rhs, alternatives, parent, { value: 0 });
     }
 
     return root;
@@ -83,7 +84,7 @@ function buildTreeFromHistory(
 const DerivationTree = ({
     derivationHistory,
 }: {
-    derivationHistory: { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[];
+    derivationHistory: { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[];
 }) => {
     const treeData = useMemo(
         () => buildTreeFromHistory(derivationHistory),

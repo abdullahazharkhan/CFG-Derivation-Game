@@ -18,8 +18,9 @@ const Game = () => {
     const [gameWon, setGameWon] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [maxTimeSec, setMaxTimeSec] = useState(180);
+    const [parentRule, setParentRule] = useState("S"); // Track the parent rule for the  derivation
     const [derivationHistory, setDerivationHistory] = useState<
-        { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[]
+        { rule: string; alternatives: string[]; parent: string; string: string; nonTerminal: string; pos: number; rhs: string }[]
     >([]);
 
     // Track lose reason
@@ -61,6 +62,7 @@ const Game = () => {
         setDerivationHistory([
             ...derivationHistory,
             {
+                parent: parentRule,
                 rule: `${selectedNonTerminal}→${rhs}`,
                 alternatives: selectedRule.rhs,
                 string: newString,
@@ -69,6 +71,8 @@ const Game = () => {
                 rhs,
             },
         ]);
+
+        setParentRule(selectedRule.rhs[ruleIdx]);
 
         // Normalize strings for comparison (remove all 'ε')
         const normalizedCurrentString = newString.replace(/ε/g, "");
@@ -109,6 +113,7 @@ const Game = () => {
             setDerivationHistory([
                 {
                     rule: "",
+                    parent: "S",
                     alternatives: [],
                     string: parsedRules[0]?.lhs || "",
                     nonTerminal: parsedRules[0]?.lhs || "",
