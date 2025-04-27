@@ -63,21 +63,25 @@ The goal of the game is to:
 
 ## **Screenshots**
 
+### **Main Screen**
+
+![Main Screen](https://github.com/abdullahazharkhan/CFG-Derivation-Game/blob/main/public/Main%20Screen.png)
+
 ### **Game Setup**
 
-![Game Setup](https://via.placeholder.com/800x400?text=Game+Setup+Screen)
+![Game Setup](https://github.com/abdullahazharkhan/CFG-Derivation-Game/blob/main/public/Game%20Setup.png)
 
 ### **Gameplay**
 
-![Gameplay](https://via.placeholder.com/800x400?text=Gameplay+Screen)
+![Gameplay](https://github.com/abdullahazharkhan/CFG-Derivation-Game/blob/main/public/Game%20Play.png)
 
 ### **Derivation Tree**
 
-![Derivation Tree](https://via.placeholder.com/800x400?text=Derivation+Tree)
+![Derivation Tree](https://github.com/abdullahazharkhan/CFG-Derivation-Game/blob/main/public/Derivation%20Tree.png)
 
 ### **Win/Lose Screen**
 
-![Win Screen](https://via.placeholder.com/800x400?text=Win+Screen)
+![Win Screen](https://github.com/abdullahazharkhan/CFG-Derivation-Game/blob/main/public/Win%20Screen.png)
 
 ---
 
