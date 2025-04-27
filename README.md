@@ -86,7 +86,6 @@ The goal of the game is to:
 - **Frontend**: React, TypeScript
 - **Styling**: Tailwind CSS
 - **Build Tool**: Vite
-- **State Management**: React Hooks
 - **Routing**: React Router
 
 ---
@@ -110,12 +109,4 @@ Feel free to contribute or suggest improvements to the project!
 
 ---
 
-## **License**
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## **Acknowledgments**
-
-Special thanks to the contributors and the open-source community for their support and inspiration in building this project.
+PS: UI might not be very good, considering it was made solely for 5 weightage =].
