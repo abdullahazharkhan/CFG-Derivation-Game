@@ -150,6 +150,10 @@ const Game = () => {
         }
     }, [gameWon, gameLost]);
 
+    // useEffect(() => {
+    //     console.log(derivationHistory);
+    // }, [derivationHistory]);
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-neutral-900 to-zinc-900">
@@ -176,7 +180,7 @@ const Game = () => {
                     {gameWon && (
                         <div className="absolute inset-0 flex items-center justify-center z-20">
                             <div className="bg-black/70 flex flex-col items-center justify-center w-full h-full backdrop-blur-[3px] rounded-2xl">
-                                <h1 className="text-5xl font-extrabold text-green-400 mb-6 drop-shadow-lg animate-bounce">🎉 You Won!</h1>
+                                <h1 className="text-5xl font-extrabold text-dCyan mb-6 drop-shadow-lg animate-bounce">🎉 You Won!</h1>
                                 <p className="text-lg text-white/90 mb-4">Congratulations! You matched the target string.</p>
                                 <button
                                     onClick={() => navigate("/init")}
@@ -207,12 +211,12 @@ const Game = () => {
                     )}
 
                     {/* Game Content */}
-                    <div className="w-full max-w-3xl flex flex-col gap-4 bg-neutral-900/80 rounded-2xl p-6 shadow-lg border border-white/10">
-                        <div className="flex justify-between items-center mb-2">
+                    <div className="w-full max-w-3xl flex flex-col gap-4 rounded-2xl p-6 shadow-lg border border-white/10">
+                        <div className="flex flex-wrap justify-between items-center mb-2">
                             <Timer setTimerState={setIsTimerRunning} maxTimeSec={maxTimeSec} />
                             <div className="text-right">
                                 <p className="font-semibold text-white/80">Target String</p>
-                                <h2 className="text-5xl font-extrabold text-green-400 drop-shadow">{targetString}</h2>
+                                <h2 className="text-5xl font-extrabold text-dCyan drop-shadow">{targetString}</h2>
                             </div>
                         </div>
 
@@ -234,7 +238,7 @@ const Game = () => {
 
                         <div className="w-full">
                             <h2 className="text-xl font-bold text-white/90 mb-1">Current String</h2>
-                            <p className="text-3xl font-mono text-green-300 bg-black/30 rounded px-2 py-1">{currentString}</p>
+                            <p className="text-3xl font-mono text-dCyan bg-black/30 rounded px-2 py-1">{currentString}</p>
                         </div>
 
                         <div className="w-full">
@@ -244,11 +248,10 @@ const Game = () => {
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedNonTerminal(nonTerminal)}
-                                        className={`p-2 rounded border font-mono text-lg transition-all ${
-                                            selectedNonTerminal === nonTerminal
-                                                ? "bg-green-500 text-white border-green-600 shadow"
+                                        className={`p-2 rounded border font-mono text-lg transition-all ${selectedNonTerminal === nonTerminal
+                                                ? "bg-dCyan text-white border-dCyan shadow"
                                                 : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
-                                        }`}
+                                            }`}
                                     >
                                         {nonTerminal}
                                     </button>
@@ -267,11 +270,10 @@ const Game = () => {
                                         <button
                                             key={idx}
                                             onClick={() => setSelectedPosition(idx)}
-                                            className={`p-2 rounded border font-mono text-lg transition-all ${
-                                                selectedPosition === idx
-                                                    ? "bg-green-500 text-white border-green-600 shadow"
+                                            className={`p-2 rounded border font-mono text-lg transition-all ${selectedPosition === idx
+                                                    ? "bg-dCyan text-white border-dCyan shadow"
                                                     : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
-                                            }`}
+                                                }`}
                                         >
                                             {pos}
                                         </button>
@@ -288,7 +290,7 @@ const Game = () => {
                                         <button
                                             key={idx}
                                             onClick={() => applyRule(idx)}
-                                            className="p-2 rounded border font-mono text-lg bg-neutral-800 text-white/90 border-white/20 hover:bg-green-500 hover:text-white transition-all"
+                                            className="p-2 rounded border font-mono text-lg bg-neutral-800 text-white/90 border-white/20 hover:bg-dCyan hover:text-white transition-all"
                                         >
                                             {rhs.replace("#", "ε")}
                                         </button>
@@ -300,7 +302,7 @@ const Game = () => {
                 </div>
                 {/* Right: Derivation Tree */}
                 <div className="w-1/2 pl-4 flex flex-col items-center">
-                    <div className="w-full flex flex-col items-center bg-neutral-900/80 rounded-2xl p-6 shadow-lg border border-white/10">
+                    <div className="w-full flex flex-col rounded-2xl p-6 shadow-lg border border-white/10">
                         <h2 className="text-2xl font-bold mb-2 text-white/90">Derivation Tree</h2>
                         <div className="w-full flex justify-center">
                             <div className="max-w-5xl w-full">
