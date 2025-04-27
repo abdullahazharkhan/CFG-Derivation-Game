@@ -25,7 +25,7 @@ function expandNodeByPreorder(
         if (child.name.split("").includes(nonTerminal) && !child._expanded && child.name === parent) {
             // console.log("counter: ", counter.value);
             // console.log("targetPos: ", targetPos);
-            if (counter.value === targetPos) {
+            // if (counter.value === targetPos) {
                 // Mark it expanded
                 child._expanded = true;
 
@@ -39,7 +39,7 @@ function expandNodeByPreorder(
                     }));
                 }
                 return true;
-            }
+            // }
             // Otherwise, count it and keep going
             counter.value++;
             // console.log("counter after: ", counter.value);
