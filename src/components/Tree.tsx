@@ -23,12 +23,12 @@ function expandNodeByPreorder(
         // console.log("child.name: ", child.name);
         // console.log("rhs: ", rhs);
         if (child.name.split("").includes(nonTerminal) && !child._expanded && child.name === parent) {
+            // if (child.name.split("").includes(nonTerminal) && child.name === parent) {
             // console.log("counter: ", counter.value);
             // console.log("targetPos: ", targetPos);
             // if (counter.value === targetPos) {
                 // Mark it expanded
                 child._expanded = true;
-
                 // Attach its RHS as children
                 if (rhs === "ε") {
                     child.children = [{ name: "ε" }];
@@ -91,6 +91,7 @@ const DerivationTree = ({
         () => buildTreeFromHistory(derivationHistory),
         [derivationHistory]
     );
+    console.log(treeData);
     if (!treeData) return null;
     return (
         <div
