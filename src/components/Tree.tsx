@@ -46,7 +46,7 @@ function expandNodeByPreorder(
         }
 
         // Recurse into this child
-        if (expandNodeByPreorder(child, nonTerminal, targetPos, rhs, alternatives, counter)) {
+        if (expandNodeByPreorder(child, nonTerminal, targetPos, rhs, alternatives, parent, counter)) {
             // console.log("ider aya")
             return true;
         }
