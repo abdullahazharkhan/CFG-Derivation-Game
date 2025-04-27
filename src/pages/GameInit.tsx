@@ -267,11 +267,11 @@ const GameInit = () => {
     };
 
     return (
-        <div className='min-h-screen flex flex-col items-center px-6 py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>
+        <div className='min-h-screen flex flex-col items-center px-2 sm:px-6 py-6 sm:py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>
             <GameHeading />
-            <div className="h-8" /> {/* Gap between heading and content */}
+            <div className="h-4 sm:h-8" />
             <div className='w-full max-w-3xl flex flex-col items-center justify-center'>
-                <div className="bg-gradient-to-br from-white/10 via-dCyan/10 to-cyan-900/10 border border-white/20 rounded-2xl p-8 shadow-2xl w-full mb-8">
+                <div className="bg-gradient-to-br from-white/10 via-dCyan/10 to-cyan-900/10 border border-white/20 rounded-2xl p-4 sm:p-8 shadow-2xl w-full mb-8">
                     <div className="flex flex-col items-center mb-6">
                         <span className="text-4xl mb-2">🛠️</span>
                         <h2 className='text-2xl font-extrabold text-dCyan text-center tracking-tight mb-1 drop-shadow'>
@@ -281,7 +281,7 @@ const GameInit = () => {
                             Configure your grammar, target, and challenge settings below.
                         </p>
                     </div>
-                    <form className="space-y-6 w-full">
+                    <form className="space-y-4 sm:space-y-6 w-full">
                         {/* CFG Rules Section */}
                         <div className="bg-white/10 border border-white/20 rounded-lg p-4 mb-4">
                             <label htmlFor="rules" className="block text-lg font-bold mb-1 text-dCyan">CFG Production Rules</label>

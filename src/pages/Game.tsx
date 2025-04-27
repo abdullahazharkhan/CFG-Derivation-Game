@@ -174,16 +174,17 @@ const Game = () => {
     }
 
     return (
-        <div className='min-h-screen flex flex-col items-center px-6 py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>            {/* Game Heading at the top center */}
+        <div className='min-h-screen flex flex-col items-center px-2 sm:px-6 py-6 sm:py-10 bg-gradient-to-br from-dCyan/30 via-black to-cyan-900/40'>
+            {/* Game Heading at the top center */}
             <div className="w-full flex flex-col items-center mb-2">
                 <GameHeading />
             </div>
             {/* Gap between heading and content */}
-            <div className="h-8" />
-            {/* Split the rest of the screen into two halves */}
-            <div className="w-full flex flex-row items-start mt-4 max-w-7xl mx-auto gap-8">
+            <div className="h-4 sm:h-8" />
+            {/* Responsive: stack on mobile, row on md+ */}
+            <div className="w-full flex flex-col md:flex-row items-start mt-4 max-w-7xl mx-auto gap-4 md:gap-8">
                 {/* Left: Game Play */}
-                <div className="w-1/2 pr-4 relative flex flex-col items-center">
+                <div className="w-full md:w-1/2 md:pr-4 relative flex flex-col items-center mb-4 md:mb-0">
                     {/* Win Screen */}
                     {gameWon && (
                         <div className="absolute inset-0 flex items-center justify-center z-20">
@@ -309,11 +310,11 @@ const Game = () => {
                     </div>
                 </div>
                 {/* Right: Derivation Tree */}
-                <div className="w-1/2 pl-4 flex flex-col items-center">
-                    <div className="w-full flex flex-col rounded-2xl p-6 shadow-lg border border-white/10">
+                <div className="w-full md:w-1/2 md:pl-4 flex flex-col items-center">
+                    <div className="w-full flex flex-col rounded-2xl p-4 sm:p-6 shadow-lg border border-white/10">
                         <h2 className="text-2xl font-bold mb-2 text-white/90">Derivation Tree</h2>
-                        <div className="w-full flex justify-center">
-                            <div className="max-w-5xl w-full">
+                        <div className="w-full flex justify-center overflow-x-auto">
+                            <div className="max-w-full md:max-w-5xl w-full">
                                 <DerivationTree derivationHistory={derivationHistory} />
                             </div>
                         </div>
