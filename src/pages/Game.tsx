@@ -72,8 +72,9 @@ const Game = () => {
             },
         ]);
 
-        setParentRule(selectedRule.rhs[ruleIdx]);
-
+        if (selectedRule.rhs[ruleIdx] && /[A-Z]/.test(selectedRule.rhs[ruleIdx])) {
+            setParentRule(selectedRule.rhs[ruleIdx]);
+        }
         // Normalize strings for comparison (remove all 'ε')
         const normalizedCurrentString = newString.replace(/ε/g, "");
         const normalizedTargetString = targetString.replace(/ε/g, "");
