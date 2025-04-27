@@ -10,16 +10,20 @@ function expandNodeByPreorder(
     nonTerminal: string,
     targetPos: number,
     rhs: string,
+    alternatives: string[],
     counter: { value: number }
 ): boolean {
     // if this node has no children, there is nothing to traverse
     if (!node.children) return false;
-
+    // console.log(`node: ${node} nonTerminal: ${nonTerminal} targetPos: ${targetPos} rhs: ${rhs} alternatives: ${alternatives}`);
     for (let i = 0; i < node.children.length; i++) {
         const child = node.children[i];
-
         // Found an unexpanded matching non-terminal?
-        if (child.name === nonTerminal && !child._expanded) {
+        // console.log("child.name: ", child.name);
+        // console.log("rhs: ", rhs);
+        if (child.name.split("").includes(nonTerminal) && !child._expanded) {
+            // console.log("counter: ", counter.value);
+            // console.log("targetPos: ", targetPos);
             if (counter.value === targetPos) {
                 // Mark it expanded
                 child._expanded = true;
@@ -28,18 +32,21 @@ function expandNodeByPreorder(
                 if (rhs === "ε") {
                     child.children = [{ name: "ε" }];
                 } else {
-                    child.children = rhs.split("").map((ch: string) => ({
-                        name: ch,
+                    child.children = alternatives.map((ch: string) => ({
+                        // name: ch === "#" ? "ε" : (`${ch} + ${counter.value}`),
+                        name: ch === "#" ? "ε" : ch,
                     }));
                 }
                 return true;
             }
             // Otherwise, count it and keep going
             counter.value++;
+            // console.log("counter after: ", counter.value);
         }
 
         // Recurse into this child
-        if (expandNodeByPreorder(child, nonTerminal, targetPos, rhs, counter)) {
+        if (expandNodeByPreorder(child, nonTerminal, targetPos, rhs, alternatives, counter)) {
+            // console.log("ider aya")
             return true;
         }
     }
@@ -47,24 +54,27 @@ function expandNodeByPreorder(
     return false;
 }
 
-function buildTreeFromHistory(history: any[]) {
+function buildTreeFromHistory(
+    history: { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[]) {
+
     // Start with the root S
     const root: any = { name: "S", _expanded: true };
 
     if (!history || history.length < 2) {
         return root;
     }
-    console.log("history[1]",history[1]);
     // Initialize root’s first expansion from history[1].string
-    root.children = history[1].string.split("").map((ch: string) => ({
-        name: ch,
+    root.children = history[1].alternatives.map((ch: string) => ({
+        name: ch === "#" ? "ε" : ch,
     }));
+
+    console.log(history);
 
     // Apply each further derivation step
     for (let stepIdx = 2; stepIdx < history.length; stepIdx++) {
-        const { nonTerminal, pos, rhs } = history[stepIdx];
+        const { nonTerminal, pos, rhs, alternatives } = history[stepIdx];
         // walk the tree and expand the pos-th occurrence of nonTerminal
-        expandNodeByPreorder(root, nonTerminal, pos, rhs, { value: 0 });
+        expandNodeByPreorder(root, nonTerminal, pos, rhs, alternatives, { value: 0 });
     }
 
     return root;
@@ -73,14 +83,13 @@ function buildTreeFromHistory(history: any[]) {
 const DerivationTree = ({
     derivationHistory,
 }: {
-    derivationHistory: any[];
+    derivationHistory: { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[];
 }) => {
     const treeData = useMemo(
         () => buildTreeFromHistory(derivationHistory),
         [derivationHistory]
     );
     if (!treeData) return null;
-    console.log(treeData);
     return (
         <div
             className="p-4 w-full rounded-2xl flex items-center justify-center"

@@ -19,7 +19,7 @@ const Game = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [maxTimeSec, setMaxTimeSec] = useState(180);
     const [derivationHistory, setDerivationHistory] = useState<
-        { rule: string; string: string; nonTerminal: string; pos: number; rhs: string }[]
+        { rule: string; alternatives: string[]; string: string; nonTerminal: string; pos: number; rhs: string }[]
     >([]);
 
     // Track lose reason
@@ -62,6 +62,7 @@ const Game = () => {
             ...derivationHistory,
             {
                 rule: `${selectedNonTerminal}→${rhs}`,
+                alternatives: selectedRule.rhs,
                 string: newString,
                 nonTerminal: selectedNonTerminal,
                 pos: selectedPosition,
@@ -108,6 +109,7 @@ const Game = () => {
             setDerivationHistory([
                 {
                     rule: "",
+                    alternatives: [],
                     string: parsedRules[0]?.lhs || "",
                     nonTerminal: parsedRules[0]?.lhs || "",
                     pos: 0,
@@ -150,9 +152,9 @@ const Game = () => {
         }
     }, [gameWon, gameLost]);
 
-    // useEffect(() => {
-    //     console.log(derivationHistory);
-    // }, [derivationHistory]);
+    useEffect(() => {
+        console.log("Derivation History: ", derivationHistory);
+    }, [derivationHistory]);
 
     if (isLoading) {
         return (
@@ -202,7 +204,7 @@ const Game = () => {
                                 </p>
                                 <button
                                     onClick={() => navigate("/init")}
-                                    className="bg-gradient-to-r from-gray-700 to-gray-500 text-white px-8 py-3 rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 font-bold text-lg transition-all"
+                                    className="bg-gradient-to-r from-green-600 to-green-400 text-white px-8 py-3 rounded-xl shadow-lg hover:from-green-700 hover:to-green-500 font-bold text-lg transition-all"
                                 >
                                     Back to Menu
                                 </button>
@@ -249,8 +251,8 @@ const Game = () => {
                                         key={idx}
                                         onClick={() => setSelectedNonTerminal(nonTerminal)}
                                         className={`p-2 rounded border font-mono text-lg transition-all ${selectedNonTerminal === nonTerminal
-                                                ? "bg-dCyan text-white border-dCyan shadow"
-                                                : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
+                                            ? "bg-dCyan text-white border-dCyan shadow"
+                                            : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
                                             }`}
                                     >
                                         {nonTerminal}
@@ -271,8 +273,8 @@ const Game = () => {
                                             key={idx}
                                             onClick={() => setSelectedPosition(idx)}
                                             className={`p-2 rounded border font-mono text-lg transition-all ${selectedPosition === idx
-                                                    ? "bg-dCyan text-white border-dCyan shadow"
-                                                    : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
+                                                ? "bg-dCyan text-white border-dCyan shadow"
+                                                : "bg-neutral-800 text-white/80 border-white/20 hover:bg-neutral-700"
                                                 }`}
                                         >
                                             {pos}
