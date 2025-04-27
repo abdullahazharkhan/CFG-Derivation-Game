@@ -4,6 +4,13 @@ import GameHeading from "../components/GameHeading";
 import Timer from "../components/Timer";
 import Tree from 'react-d3-tree';
 
+// Define the node structure for the tree
+interface TreeNode {
+    name: string;
+    id: string;
+    children: TreeNode[];
+}
+
 const Game = () => {
     const navigate = useNavigate();
     const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -18,17 +25,60 @@ const Game = () => {
     const [gameWon, setGameWon] = useState(false); // New state for win condition
     const [isLoading, setIsLoading] = useState(true);
     const [maxTimeSec, setMaxTimeSec] = useState(180);
-    const [grammarData, setGrammarData] = useState<{ name: string; children: any[] }>({
+    const [treeData, setTreeData] = useState<TreeNode>({
         name: "",
+        id: "root",
         children: []
     });
+    const [nodeCounter, setNodeCounter] = useState(1); // Counter for generating unique IDs
 
-    const applyRule = (ruleIdx: number, ruleLhs: string) => {
+    // Function to generate a unique ID for each node
+    const generateNodeId = () => {
+        const id = `node-${nodeCounter}`;
+        setNodeCounter(nodeCounter + 1);
+        return id;
+    };
+
+    // Function to add children to a specific node in the tree
+    const addChildrenToNode = (tree: TreeNode, parentId: string, children: string[]): TreeNode => {
+        if (tree.id === parentId) {
+            return {
+                ...tree,
+                children: children.map(child => ({
+                    name: child.replace("#", "ε"),
+                    id: generateNodeId(),
+                    children: []
+                }))
+            };
+        }
+
+        return {
+            ...tree,
+            children: tree.children.map(child => addChildrenToNode(child, parentId, children))
+        };
+    };
+
+    // Function to find a specific node in the tree by its ID
+    const findNodeById = (tree: TreeNode, id: string): TreeNode | null => {
+        if (tree.id === id) {
+            return tree;
+        }
+
+        for (const child of tree.children) {
+            const found = findNodeById(child, id);
+            if (found) {
+                return found;
+            }
+        }
+
+        return null;
+    };
+
+    const applyRule = (ruleIdx: number) => {
         if (!selectedNonTerminal || selectedPosition === null) {
             alert("Please select a non-terminal and its position first.");
             return;
         }
-
 
         const nonTerminalPositions = [...currentString].reduce((acc, char, idx) => {
             if (char === selectedNonTerminal) acc.push(idx);
@@ -55,6 +105,57 @@ const Game = () => {
 
         setCurrentString(newString);
         setDepth(depth + 1);
+
+        // Update the tree based on the selected rule
+        if (depth === 0) {
+            // Initialize the tree with the root node and its children
+            setTreeData({
+                name: selectedNonTerminal,
+                id: "root",
+                children: selectedRule.rhs.map((rhs, idx) => ({
+                    name: rhs.replace("#", "ε"),
+                    id: idx === ruleIdx ? "selected-node" : generateNodeId(),
+                    children: []
+                }))
+            });
+        } else {
+            // Find the last selected node (which may have been renamed) and add children to it
+            const selectedNode = findNodeById(treeData, "selected-node");
+
+            if (selectedNode) {
+                // Get all rules for the selected non-terminal
+                const nonTerminalRules = rules.find(rule => rule.lhs === selectedNonTerminal);
+
+                if (nonTerminalRules) {
+                    // Create updated tree data
+                    const updatedTreeData = addChildrenToNode(
+                        treeData,
+                        "selected-node",
+                        nonTerminalRules.rhs
+                    );
+
+                    // Now find the newly expanded node and mark the selected rule node as "selected-node"
+                    const findAndMarkSelected = (tree: TreeNode): TreeNode => {
+                        if (tree.id === "selected-node") {
+                            return {
+                                ...tree,
+                                children: tree.children.map((child, idx) => ({
+                                    ...child,
+                                    id: idx === ruleIdx ? "selected-node" : child.id
+                                }))
+                            };
+                        }
+
+                        return {
+                            ...tree,
+                            children: tree.children.map(child => findAndMarkSelected(child))
+                        };
+                    };
+
+                    setTreeData(findAndMarkSelected(updatedTreeData));
+                }
+            }
+        }
 
         // Normalize strings for comparison (remove all 'ε')
         const normalizedCurrentString = newString.replace(/ε/g, "");
@@ -84,11 +185,19 @@ const Game = () => {
         if (storedRules && storedTargetString && storedMaxDepth) {
             const parsedRules = JSON.parse(storedRules);
             setRules(parsedRules);
-            setCurrentString(parsedRules[0]?.lhs || "");
+            const startSymbol = parsedRules[0]?.lhs || "";
+            setCurrentString(startSymbol);
             setTargetString(storedTargetString);
             setMaxDepth(parseInt(storedMaxDepth));
             setMaxTimeSec(storedMaxTimeSec ? parseInt(storedMaxTimeSec) : 180);
-            setGrammarData({ name: parsedRules[0]?.lhs || "", children: [] });
+
+            // Initialize tree with the start symbol
+            setTreeData({
+                name: startSymbol,
+                id: "root",
+                children: []
+            });
+
             setIsLoading(false);
         } else {
             alert("Game setup is incomplete. Please start a new game.");
@@ -234,14 +343,19 @@ const Game = () => {
                 <div className="w-full">
                     <h2 className="text-xl font-bold">Grammar Tree</h2>
                     <div className="p-1 mt-1 w-full rounded border-white/20 border">
-                        <div id="treeWrapper" style={{ height: '30em' }}>
-                            <Tree data={grammarData} pathFunc={"diagonal"} orientation="vertical" />
+                        <div id="treeWrapper" style={{ height: '30em', width: '100%' }}>
+                            <Tree
+                                data={treeData}
+                                pathFunc="diagonal"
+                                orientation="vertical"
+                                translate={{ x: 250, y: 50 }}
+                                nodeSize={{ x: 200, y: 100 }}
+                                separation={{ siblings: 1, nonSiblings: 2 }}
+                            />
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 };

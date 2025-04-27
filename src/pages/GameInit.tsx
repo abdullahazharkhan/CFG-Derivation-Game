@@ -237,11 +237,11 @@ const GameInit = () => {
         console.log(newRules);
 
         // 6) Check if the target string is derivable using recursive DFS
-        if (!checkCFGRecursive(rules, targetString, maxTreeDepth)) {
-            alert("The target string cannot be derived with the given rules and depth.");
-            setLoading(false);
-            return;
-        }
+        // if (!checkCFGRecursive(rules, targetString, maxTreeDepth)) {
+        //     alert("The target string cannot be derived with the given rules and depth.");
+        //     setLoading(false);
+        //     return;
+        // }
 
         // Save validated data to localStorage
         localStorage.setItem("rules", JSON.stringify(newRules));
