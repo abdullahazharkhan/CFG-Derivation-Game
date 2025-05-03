@@ -96,7 +96,7 @@ The goal of the game is to:
 
 ## **Contributors**
 
-- **[Abdul Rafay Mughal](https://github.com/abdul-rafay-mughal)**
+- **[Abdul Rafay Mughal](https://github.com/AbdulRafay86)**
 - **[Abdullah Azhar Khan](https://github.com/abdullahazharkhan)**
 - **[Muhammad Awais Shaikh](https://github.com/codexbegin14)**
 
